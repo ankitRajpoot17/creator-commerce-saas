@@ -23,6 +23,7 @@ model User {
   leads Lead[]
   bookingSlots BookingSlot[]
   bookings Booking[]
+  memberships Membership[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -100,5 +101,20 @@ model Booking {
   updatedAt DateTime @updatedAt
   @@index([creatorId,status])
   @@index([customerEmail])
+}
+model Membership {
+  id String @id @default(cuid())
+  creatorId String
+  productId String
+  memberUserId String
+  status String @default("ACTIVE")
+  startedAt DateTime @default(now())
+  expiresAt DateTime?
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  product Product @relation(fields:[productId],references:[id],onDelete:Cascade)
+  member User @relation(fields:[memberUserId],references:[id],onDelete:Cascade)
+  @@unique([productId,memberUserId])
+  @@index([creatorId,status])
+  @@index([memberUserId,status])
 }
 model LessonProgress { id String @id @default(cuid()); lessonId String; userId String; completed Boolean @default(false); progress Int @default(0); lesson Lesson @relation(fields:[lessonId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); updatedAt DateTime @updatedAt; createdAt DateTime @default(now()); @@unique([lessonId,userId]); @@index([userId]) }
