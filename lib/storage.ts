@@ -1,44 +1,32 @@
-import crypto from "crypto";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { randomUUID } from "crypto";
 
-export function createUploadToken(userId: string, productId: string) {
-  const secret = process.env.S3_SECRET_KEY || process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error("Storage secret is not configured.");
-  const payload = userId + ":" + productId + ":" + Date.now();
-  const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  return Buffer.from(payload + ":" + signature).toString("base64url");
+function client() {
+  if (!process.env.S3_BUCKET || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) throw new Error("Private storage is not configured.");
+  return new S3Client({
+    region: process.env.S3_REGION || "auto",
+    endpoint: process.env.S3_ENDPOINT || undefined,
+    forcePathStyle: process.env.S3_FORCE_PATH_STYLE === "true",
+    credentials: { accessKeyId: process.env.S3_ACCESS_KEY, secretAccessKey: process.env.S3_SECRET_KEY }
+  });
 }
 
-export function verifyUploadToken(token: string, userId: string, productId: string) {
-  const secret = process.env.S3_SECRET_KEY || process.env.NEXTAUTH_SECRET;
-  if (!secret) return false;
-  try {
-    const raw = Buffer.from(token, "base64url").toString("utf8");
-    const parts = raw.split(":");
-    if (parts.length !== 4 || parts[0] !== userId || parts[1] !== productId) return false;
-    const timestamp = Number(parts[2]);
-    if (!Number.isFinite(timestamp) || Date.now() - timestamp > 15 * 60 * 1000) return false;
-    const expected = crypto.createHmac("sha256", secret).update(parts.slice(0, 3).join(":")).digest("hex");
-    return crypto.timingSafeEqual(Buffer.from(parts[3]), Buffer.from(expected));
-  } catch {
-    return false;
-  }
+export function storageConfigured() {
+  return Boolean(process.env.S3_BUCKET && process.env.S3_ACCESS_KEY && process.env.S3_SECRET_KEY);
 }
 
-export function createSignedDownloadUrl(fileUrl: string, orderId: string) {
-  const secret = process.env.S3_SECRET_KEY || process.env.NEXTAUTH_SECRET;
-  if (!secret) throw new Error("Storage secret is not configured.");
-  const expires = Date.now() + 15 * 60 * 1000;
-  const payload = orderId + ":" + expires;
-  const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  const separator = fileUrl.includes("?") ? "&" : "?";
-  return fileUrl + separator + "download_order=" + encodeURIComponent(orderId) + "&download_expires=" + expires + "&download_sig=" + signature;
+export function createPrivateFileKey(creatorId: string, productId: string, filename: string) {
+  const safe = filename.replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-120) || "file";
+  return `creators/${creatorId}/products/${productId}/${randomUUID()}-${safe}`;
 }
 
-export function verifySignedDownload(orderId: string, expires: string, signature: string) {
-  const secret = process.env.S3_SECRET_KEY || process.env.NEXTAUTH_SECRET;
-  if (!secret || !orderId || !expires || !signature) return false;
-  const expiry = Number(expires);
-  if (!Number.isFinite(expiry) || Date.now() > expiry) return false;
-  const expected = crypto.createHmac("sha256", secret).update(orderId + ":" + expiry).digest("hex");
-  try { return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected)); } catch { return false; }
+export async function createUploadUrl(key: string, contentType: string) {
+  const command = new PutObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key, ContentType: contentType || "application/octet-stream" });
+  return getSignedUrl(client(), command, { expiresIn: 900 });
+}
+
+export async function createPrivateDownloadUrl(key: string) {
+  const command = new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key });
+  return getSignedUrl(client(), command, { expiresIn: 900 });
 }
