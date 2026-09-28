@@ -16,6 +16,10 @@ export async function POST(request:Request){
   const magnetId=body.leadMagnetId?String(body.leadMagnetId):null;
   if(magnetId){const magnet=await prisma.leadMagnet.findFirst({where:{id:magnetId,creatorId,published:true}});if(!magnet)return NextResponse.json({error:"Lead magnet not found."},{status:404});}
   const lead=await prisma.lead.upsert({where:{creatorId_email:{creatorId,email}},update:{name:String(body.name??"").trim()||undefined,source:String(body.source??"").trim()||undefined,leadMagnetId:magnetId},create:{creatorId,email,name:String(body.name??"").trim()||null,source:String(body.source??"").trim()||null,leadMagnetId:magnetId}});
+  const automation=await prisma.emailAutomation.findFirst({where:{creatorId,trigger:"NEW_LEAD",enabled:true}});
+  if(automation && process.env.RESEND_API_KEY){
+    fetch(new URL("/api/email/trigger",request.url),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({creatorId,email,name:String(body.name??"").trim(),automationId:automation.id})}).catch(()=>undefined);
+  }
   return NextResponse.json({lead}, {status:201});
  }catch{return NextResponse.json({error:"Unable to capture lead."},{status:500});}
 }
