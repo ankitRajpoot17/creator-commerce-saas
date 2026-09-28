@@ -11,6 +11,7 @@ enum UserRole { CREATOR ADMIN }
 enum ProductType { DIGITAL COURSE MEMBERSHIP }
 enum ProductStatus { DRAFT PUBLISHED ARCHIVED }
 enum OrderStatus { PENDING PAID FAILED REFUNDED }
+enum LessonType { VIDEO TEXT FILE }
 
 model User {
   id String @id @default(cuid())
@@ -23,6 +24,8 @@ model User {
   orders Order[]
   sessions Session[]
   loginCodes LoginCode[]
+  enrollments Enrollment[]
+  lessonProgress LessonProgress[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -93,6 +96,8 @@ model Product {
   creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
   profile CreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   orders Order[]
+  course Course?
+  enrollments Enrollment[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([profileId, status])
@@ -114,4 +119,70 @@ model Order {
   updatedAt DateTime @updatedAt
   @@index([buyerEmail])
   @@index([providerId])
+}
+
+model Course {
+  id String @id @default(cuid())
+  productId String @unique
+  title String
+  description String?
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modules CourseModule[]
+  enrollments Enrollment[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CourseModule {
+  id String @id @default(cuid())
+  courseId String
+  title String
+  position Int @default(0)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([courseId, position])
+}
+
+model Lesson {
+  id String @id @default(cuid())
+  moduleId String
+  title String
+  type LessonType @default(VIDEO)
+  contentUrl String?
+  body String?
+  position Int @default(0)
+  module CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progress LessonProgress[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([moduleId, position])
+}
+
+model Enrollment {
+  id String @id @default(cuid())
+  courseId String
+  productId String
+  userId String
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([courseId, userId])
+  @@index([userId])
+}
+
+model LessonProgress {
+  id String @id @default(cuid())
+  lessonId String
+  userId String
+  completed Boolean @default(false)
+  progress Int @default(0)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  @@unique([lessonId, userId])
+  @@index([userId])
 }
