@@ -1,3 +1,4 @@
+import { rateLimit, requestKey } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
