@@ -40,7 +40,9 @@ export async function PATCH(request: Request) {
     const body = await request.json();
     const product = await prisma.product.findUnique({ where: { id: String(body.id ?? "") } });
     if (!product || product.creatorId !== user.id) return NextResponse.json({ error: "Product not found." }, { status: 404 });
-    const updated = await prisma.product.update({ where: { id: product.id }, data: { status: body.published ? "PUBLISHED" : "DRAFT", fileKey: body.fileKey === undefined ? undefined : String(body.fileKey).trim() || null } });
+    const nextFileKey = body.fileKey === undefined ? undefined : String(body.fileKey).trim() || null;
+    if (nextFileKey && !nextFileKey.startsWith(`creators/${user.id}/products/${product.id}/`)) return NextResponse.json({ error: "Invalid private file key." }, { status: 400 });
+    const updated = await prisma.product.update({ where: { id: product.id }, data: { status: body.published ? "PUBLISHED" : "DRAFT", fileKey: nextFileKey } });
     return NextResponse.json({ product: updated });
   } catch { return NextResponse.json({ error: "Unable to update product." }, { status: 500 }); }
 }
