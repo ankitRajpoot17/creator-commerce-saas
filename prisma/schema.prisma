@@ -274,6 +274,9 @@ model EventRegistration {
   email String
   name String?
   status String @default("REGISTERED")
+  provider String?
+  providerOrderId String?
+  providerPaymentId String?
   createdAt DateTime @default(now())
   event Event @relation(fields:[eventId],references:[id],onDelete:Cascade)
   @@unique([eventId,email])
