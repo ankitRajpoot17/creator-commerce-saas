@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isValidUsername } from "@/lib/validation";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(request: Request) {
   const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
@@ -35,9 +36,11 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
+    const user = await getCurrentUser();
+    if (!user?.profile) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
     const body = await request.json();
     const username = String(body.username ?? "").trim().toLowerCase();
-    if (!username) return NextResponse.json({ error: "Username is required." }, { status: 400 });
+    if (!username || username !== user.profile.username) return NextResponse.json({ error: "You can only update your own profile." }, { status: 403 });
     const profile = await prisma.creatorProfile.update({
       where: { username },
       data: {
