@@ -11,6 +11,7 @@ export default async function PurchaseSuccess({searchParams}:{searchParams:Promi
     <h1>{order?.status==="PAID"?"Payment successful":"Payment processing"}</h1>
     <p>{order?.status==="PAID"?"Your purchase is confirmed.":"We could not confirm the payment yet. If you just paid, webhook confirmation may take a moment."}</p>
     {order?.status==="PAID"&&order.product.type==="COURSE"&&<p><a href={"/dashboard/learning"}>Go to My Learning →</a></p>}
+    {order?.status==="PAID"&&order.product.type==="MEMBERSHIP"&&<p><a href={"/dashboard/memberships"}>Go to My Memberships →</a></p>}
     {order?.status==="PAID"&&order.product.type!=="COURSE"&&<p>Your digital purchase is ready in your order email/download flow.</p>}
     {isOwner&&<p style={{color:"#777"}}>Creator view: this order belongs to your product.</p>}
   </main>;
