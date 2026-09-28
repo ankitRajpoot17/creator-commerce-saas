@@ -25,7 +25,8 @@ model User {
   emailAutomations EmailAutomation[]
   bookingSlots BookingSlot[]
   bookings Booking[]
-  memberships Membership[]
+  ownedMemberships Membership[] @relation("MembershipCreator")
+  joinedMemberships Membership[] @relation("MembershipMember")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -112,9 +113,9 @@ model Membership {
   status String @default("ACTIVE")
   startedAt DateTime @default(now())
   expiresAt DateTime?
-  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  creator User @relation("MembershipCreator",fields:[creatorId],references:[id],onDelete:Cascade)
   product Product @relation(fields:[productId],references:[id],onDelete:Cascade)
-  member User @relation(fields:[memberUserId],references:[id],onDelete:Cascade)
+  member User @relation("MembershipMember",fields:[memberUserId],references:[id],onDelete:Cascade)
   @@unique([productId,memberUserId])
   @@index([creatorId,status])
   @@index([memberUserId,status])
