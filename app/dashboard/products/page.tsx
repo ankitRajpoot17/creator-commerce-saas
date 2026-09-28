@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Product={id:string;name:string;type:string;status:string;price:number;currency:string;coverUrl?:string|null};
+type Product={id:string;name:string;type:string;status:string;price:number;currency:string;coverUrl?:string|null;fileKey?:string|null};
 
 export default function ProductsPage(){
   const [products,setProducts]=useState<Product[]>([]);
@@ -10,6 +10,7 @@ export default function ProductsPage(){
   const [type,setType]=useState("DIGITAL");
   const [price,setPrice]=useState("0");
   const [message,setMessage]=useState("");
+  const [uploading,setUploading]=useState<string|null>(null);
 
   async function load(){
     const s=await fetch("/api/auth/session").then(r=>r.json());
@@ -25,6 +26,19 @@ export default function ProductsPage(){
     const d=await r.json();
     if(!r.ok) return setMessage(d.error||"Unable to create product.");
     setName(""); setPrice("0"); setMessage("Product created."); await load();
+  }
+
+  async function uploadFile(p:Product,file:File){
+    setUploading(p.id); setMessage("");
+    try {
+      const r=await fetch("/api/products/upload-token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({productId:p.id,filename:file.name,contentType:file.type})});
+      const d=await r.json(); if(!r.ok) throw new Error(d.error||"Unable to prepare upload.");
+      const put=await fetch(d.uploadUrl,{method:"PUT",headers:{"Content-Type":file.type||"application/octet-stream"},body:file});
+      if(!put.ok) throw new Error("File upload failed.");
+      const saved=await fetch("/api/products",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:p.id,fileKey:d.key,published:p.status==="PUBLISHED"})});
+      const sd=await saved.json(); if(!saved.ok) throw new Error(sd.error||"Unable to attach file.");
+      setMessage("Private file uploaded."); await load();
+    } catch(e){ setMessage(e instanceof Error?e.message:"Upload failed."); } finally { setUploading(null); }
   }
 
   async function toggle(p:Product){
@@ -55,6 +69,7 @@ export default function ProductsPage(){
         <div style={{display:"flex",gap:10,alignItems:"center"}}>
           <strong style={{flex:1}}>{p.name}</strong><span>{p.type}</span><span>₹{(p.price/100).toFixed(2)}</span><button onClick={()=>toggle(p)}>{p.status==="PUBLISHED"?"Unpublish":"Publish"}</button>
         </div>
+        {p.type==="DIGITAL"&&<div style={{marginTop:12}}><input type="file" disabled={uploading===p.id} onChange={e=>{const f=e.target.files?.[0];if(f)uploadFile(p,f);e.currentTarget.value="";}}/>{uploading===p.id&&<span style={{marginLeft:8}}>Uploading…</span>}{p.fileKey&&uploading!==p.id&&<span style={{marginLeft:8}}>Private file attached ✓</span>}</div>}
         {p.type==="COURSE"&&<div style={{marginTop:10}}><a href="/dashboard/courses">Open Course Builder →</a></div>}
       </article>)}
     </section>
