@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { enrollPaidCourse } from "@/lib/enrollment";
 import { activateMembership } from "@/lib/membership";
+import { sendEmail, renderEmailBody } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
@@ -39,6 +40,12 @@ export async function POST(request: Request) {
     });
 
     await prisma.analyticsEvent.create({ data: { creatorId: paid.creatorId, type: "SALE", path: "/checkout/" + paid.productId, metadata: JSON.stringify({ orderId: paid.id, productId: paid.productId, amount: paid.amount, currency: paid.currency }) } });
+
+    if (process.env.RESEND_API_KEY && paid.downloadToken) {
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      const downloadUrl = baseUrl.replace(/\/$/, "") + "/api/download/" + paid.id + "?token=" + encodeURIComponent(paid.downloadToken);
+      await sendEmail({ to: paid.buyerEmail, subject: "Your purchase is ready", html: "<p>Your payment was successful.</p><p><a href=\"" + renderEmailBody(downloadUrl) + "\">Download your purchase</a></p>" });
+    }
 
     if (paid.productId) {
       await enrollPaidCourse(order.id);
