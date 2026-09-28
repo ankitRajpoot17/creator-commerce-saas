@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AnalyticsTracker from "@/app/components/AnalyticsTracker";
 
 declare global { interface Window { Razorpay?: new (options: Record<string, unknown>) => { open: () => void }; } }
 
@@ -61,7 +60,7 @@ export default function Checkout({ params }: { params: Promise<{ productId: stri
     finally{ setBusy(false); }
   }
 
-  return <><AnalyticsTracker creatorId="" type="CHECKOUT_STARTED" path={"/checkout/" + productId} /><main style={{minHeight:"100vh",padding:"70px 24px",background:"#f7f7f7"}}>
+  return <main style={{minHeight:"100vh",padding:"70px 24px",background:"#f7f7f7"}}>
     <form onSubmit={submit} style={{maxWidth:520,margin:"auto",background:"#fff",padding:32,borderRadius:20}}>
       <a href="/">← Home</a><h1>Secure checkout</h1><p>Enter your email. You’ll be redirected to Razorpay to complete payment.</p>
       <input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" style={{width:"100%",padding:14,border:"1px solid #ddd",borderRadius:10}} />
