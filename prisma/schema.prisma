@@ -66,6 +66,7 @@ model LeadMagnet {
   name String
   description String?
   fileUrl String?
+  fileKey String?
   slug String @unique
   published Boolean @default(false)
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
