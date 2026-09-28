@@ -1,3 +1,4 @@
+import { rateLimit, requestKey } from "@/lib/rate-limit";
 import {NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {getCurrentUser} from "@/lib/auth";
@@ -5,6 +6,7 @@ import {sendEmail,renderEmailBody} from "@/lib/email";
 import crypto from "crypto";
 
 export async function POST(req:Request){
+ const rl=await rateLimit(requestKey(req,"booking"),10,60); if(!rl.allowed)return NextResponse.json({error:"Too many booking attempts."},{status:429});
  const b=await req.json(); const slotId=String(b.slotId||""),email=String(b.email||"").trim().toLowerCase();
  if(!slotId||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return NextResponse.json({error:"Valid slot and email are required."},{status:400});
  const slot=await prisma.bookingSlot.findUnique({where:{id:slotId}});
