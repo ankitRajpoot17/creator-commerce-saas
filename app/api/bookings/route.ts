@@ -19,6 +19,16 @@ export async function POST(req:Request){
  return NextResponse.json({booking},{status:201});
 }
 
+export async function PATCH(req:Request){
+ const user=await getCurrentUser();if(!user)return NextResponse.json({error:"Authentication required."},{status:401});
+ const b=await req.json();const id=String(b.id||""),status=String(b.status||"");
+ if(!["CANCELLED","CONFIRMED"].includes(status))return NextResponse.json({error:"Invalid booking status."},{status:400});
+ const booking=await prisma.booking.findUnique({where:{id},include:{slot:true}});if(!booking||booking.creatorId!==user.id)return NextResponse.json({error:"Booking not found."},{status:404});
+ if(booking.status==="PAID"&&status==="CANCELLED")return NextResponse.json({error:"Paid booking cancellation requires a refund workflow."},{status:409});
+ const updated=await prisma.$transaction(async tx=>{const next=await tx.booking.update({where:{id},data:{status}});if(status==="CANCELLED")await tx.bookingSlot.update({where:{id:booking.slotId},data:{available:true}});return next;});
+ return NextResponse.json({booking:updated});
+}
+
 export async function GET(){
  const user=await getCurrentUser();
  if(!user?.profile)return NextResponse.json({error:"Authentication required."},{status:401});
