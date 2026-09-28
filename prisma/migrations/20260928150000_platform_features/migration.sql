@@ -1,0 +1,15 @@
+CREATE TABLE "Event" ("id" TEXT NOT NULL,"creatorId" TEXT NOT NULL,"name" TEXT NOT NULL,"slug" TEXT NOT NULL,"description" TEXT,"startsAt" TIMESTAMP(3) NOT NULL,"endsAt" TIMESTAMP(3),"meetingUrl" TEXT,"price" INTEGER NOT NULL DEFAULT 0,"currency" TEXT NOT NULL DEFAULT 'INR',"capacity" INTEGER,"published" BOOLEAN NOT NULL DEFAULT false,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Event_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "Event_slug_key" ON "Event"("slug"); CREATE INDEX "Event_creatorId_startsAt_idx" ON "Event"("creatorId","startsAt");
+CREATE TABLE "EventRegistration" ("id" TEXT NOT NULL,"eventId" TEXT NOT NULL,"email" TEXT NOT NULL,"name" TEXT,"status" TEXT NOT NULL DEFAULT 'REGISTERED',"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "EventRegistration_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "EventRegistration_eventId_email_key" ON "EventRegistration"("eventId","email"); CREATE INDEX "EventRegistration_email_idx" ON "EventRegistration"("email");
+CREATE TABLE "SaaSPlan" ("id" TEXT NOT NULL,"name" TEXT NOT NULL,"monthlyPrice" INTEGER NOT NULL DEFAULT 0,"yearlyPrice" INTEGER NOT NULL DEFAULT 0,"active" BOOLEAN NOT NULL DEFAULT true,CONSTRAINT "SaaSPlan_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "SaaSPlan_name_key" ON "SaaSPlan"("name");
+CREATE TABLE "Subscription" ("id" TEXT NOT NULL,"userId" TEXT NOT NULL,"planId" TEXT NOT NULL,"provider" TEXT NOT NULL,"providerSubscriptionId" TEXT,"status" TEXT NOT NULL DEFAULT 'ACTIVE',"currentPeriodEnd" TIMESTAMP(3),"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL,CONSTRAINT "Subscription_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "Subscription_userId_status_idx" ON "Subscription"("userId","status"); CREATE INDEX "Subscription_providerSubscriptionId_idx" ON "Subscription"("providerSubscriptionId"); CREATE UNIQUE INDEX "Subscription_userId_planId_key" ON "Subscription"("userId","planId");
+CREATE TABLE "CommunityConnection" ("id" TEXT NOT NULL,"creatorId" TEXT NOT NULL,"provider" TEXT NOT NULL,"externalId" TEXT,"accessToken" TEXT,"enabled" BOOLEAN NOT NULL DEFAULT true,CONSTRAINT "CommunityConnection_pkey" PRIMARY KEY ("id"));
+CREATE UNIQUE INDEX "CommunityConnection_creatorId_provider_key" ON "CommunityConnection"("creatorId","provider");
+ALTER TABLE "Event" ADD CONSTRAINT "Event_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "EventRegistration" ADD CONSTRAINT "EventRegistration_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Subscription" ADD CONSTRAINT "Subscription_planId_fkey" FOREIGN KEY ("planId") REFERENCES "SaaSPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "CommunityConnection" ADD CONSTRAINT "CommunityConnection_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
