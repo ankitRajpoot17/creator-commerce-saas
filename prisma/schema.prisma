@@ -4,48 +4,90 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url = env("DATABASE_URL")
 }
 
-enum UserRole {
-  CREATOR
-  ADMIN
-}
+enum UserRole { CREATOR ADMIN }
+enum ProductType { DIGITAL COURSE MEMBERSHIP }
+enum ProductStatus { DRAFT PUBLISHED ARCHIVED }
+enum OrderStatus { PENDING PAID FAILED REFUNDED }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  role      UserRole @default(CREATOR)
-  profile   CreatorProfile?
+  id String @id @default(cuid())
+  email String @unique
+  name String?
+  image String?
+  role UserRole @default(CREATOR)
+  profile CreatorProfile?
+  products Product[]
+  orders Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model CreatorProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  username    String   @unique
-  displayName  String
-  bio         String?
-  avatarUrl   String?
-  theme       String   @default("minimal")
-  published   Boolean  @default(false)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  links       ProfileLink[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id String @id @default(cuid())
+  userId String @unique
+  username String @unique
+  displayName String
+  bio String?
+  avatarUrl String?
+  theme String @default("minimal")
+  published Boolean @default(false)
+  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  links ProfileLink[]
+  products Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ProfileLink {
-  id        String         @id @default(cuid())
+  id String @id @default(cuid())
   profileId String
-  title     String
-  url       String
-  position  Int            @default(0)
-  enabled   Boolean        @default(true)
-  profile   CreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  title String
+  url String
+  position Int @default(0)
+  enabled Boolean @default(true)
+  profile CreatorProfile @relation(fields:[profileId], references:[id], onDelete:Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id String @id @default(cuid())
+  creatorId String
+  profileId String
+  type ProductType @default(DIGITAL)
+  status ProductStatus @default(DRAFT)
+  name String
+  slug String @unique
+  description String?
+  price Int @default(0)
+  currency String @default("INR")
+  fileUrl String?
+  coverUrl String?
+  creator User @relation(fields:[creatorId], references:[id], onDelete:Cascade)
+  profile CreatorProfile @relation(fields:[profileId], references:[id], onDelete:Cascade)
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([profileId, status])
+}
+
+model Order {
+  id String @id @default(cuid())
+  productId String
+  creatorId String
+  buyerEmail String
+  amount Int
+  currency String @default("INR")
+  status OrderStatus @default(PENDING)
+  provider String?
+  providerId String?
+  product Product @relation(fields:[productId], references:[id])
+  creator User @relation(fields:[creatorId], references:[id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([buyerEmail])
+  @@index([providerId])
 }
