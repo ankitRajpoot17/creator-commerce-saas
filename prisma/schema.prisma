@@ -284,7 +284,8 @@ model SaaSPlan {
   name String @unique
   monthlyPrice Int @default(0)
   yearlyPrice Int @default(0)
-  razorpayPlanId String?
+  razorpayMonthlyPlanId String?
+  razorpayYearlyPlanId String?
   active Boolean @default(true)
   subscriptions Subscription[]
 }
