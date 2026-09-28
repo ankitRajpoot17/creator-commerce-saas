@@ -130,6 +130,7 @@ model EmailCampaign {
   segment String @default("ALL")
   status String @default("DRAFT")
   sentAt DateTime?
+  deliveries EmailDelivery[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
@@ -145,8 +146,45 @@ model EmailAutomation {
   subject String
   body String
   enabled Boolean @default(true)
+  steps EmailAutomationStep[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
   @@index([creatorId,trigger,enabled])
+}
+
+model EmailAutomationStep {
+  id String @id @default(cuid())
+  automationId String
+  position Int @default(0)
+  delayHours Int @default(0)
+  subject String
+  body String
+  automation EmailAutomation @relation(fields:[automationId],references:[id],onDelete:Cascade)
+  @@index([automationId,position])
+}
+
+model EmailDelivery {
+  id String @id @default(cuid())
+  campaignId String?
+  recipientEmail String
+  recipientName String?
+  subject String
+  status String @default("SENT")
+  providerId String?
+  error String?
+  sentAt DateTime @default(now())
+  campaign EmailCampaign? @relation(fields:[campaignId],references:[id],onDelete:SetNull)
+  @@index([campaignId,status])
+  @@index([recipientEmail,sentAt])
+}
+
+model EmailUnsubscribe {
+  id String @id @default(cuid())
+  creatorId String
+  email String
+  createdAt DateTime @default(now())
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  @@unique([creatorId,email])
+  @@index([email])
 }
