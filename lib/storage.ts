@@ -34,7 +34,7 @@ export function verifyUploadToken(_token: string, _userId: string, _productId: s
   return false;
 }
 
-export function createSignedDownloadUrl(fileUrl: string) {
+export function createSignedDownloadUrl(fileUrl: string, _orderId?: string) {
   return fileUrl;
 }
 
