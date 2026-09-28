@@ -1,0 +1,15 @@
+name: Maintenance
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup stale records
+        run: curl --fail-with-body -X POST -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/cleanup"
+      - name: Expire memberships
+        run: curl --fail-with-body -X POST -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/membership-expiry"
+      - name: Send booking reminders
+        run: curl --fail-with-body -X POST -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" "${{ secrets.APP_URL }}/api/cron/booking-reminders"
