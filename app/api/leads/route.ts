@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { enqueueEmailJob } from "@/lib/queue";
 
 export async function GET(){
  const user=await getCurrentUser(); if(!user) return NextResponse.json({error:"Authentication required."},{status:401});
@@ -18,7 +19,14 @@ export async function POST(request:Request){
   const lead=await prisma.lead.upsert({where:{creatorId_email:{creatorId,email}},update:{name:String(body.name??"").trim()||undefined,source:String(body.source??"").trim()||undefined,leadMagnetId:magnetId},create:{creatorId,email,name:String(body.name??"").trim()||null,source:String(body.source??"").trim()||null,leadMagnetId:magnetId}});
   const automation=await prisma.emailAutomation.findFirst({where:{creatorId,trigger:"NEW_LEAD",enabled:true}});
   if(automation && process.env.RESEND_API_KEY){
-    fetch(new URL("/api/email/trigger",request.url),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({creatorId,email,name:String(body.name??"").trim(),automationId:automation.id})}).catch(()=>undefined);
+    const steps=await prisma.emailAutomationStep.findMany({where:{automationId:automation.id},orderBy:{position:"asc"}});
+    if(steps.length){
+      for(const step of steps){
+        await enqueueEmailJob({to:email,name:String(body.name??"").trim(),subject:step.subject,body:step.body,creatorId,automationId:automation.id,stepId:step.id,leadId:lead.id},step.delayHours);
+      }
+    }else{
+      await enqueueEmailJob({to:email,name:String(body.name??"").trim(),subject:automation.subject,body:automation.body,creatorId,automationId:automation.id,stepId:"legacy",leadId:lead.id});
+    }
   }
   return NextResponse.json({lead}, {status:201});
  }catch{return NextResponse.json({error:"Unable to capture lead."},{status:500});}
