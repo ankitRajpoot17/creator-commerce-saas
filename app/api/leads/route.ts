@@ -9,8 +9,8 @@ export async function GET(){
 }
 export async function POST(request:Request){
  try{
-  const body=await request.json(); const email=String(body.email??"").trim().toLowerCase(); const creatorId=String(body.creatorId??"").trim();
-  if(!creatorId||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({error:"Valid email and creator are required."},{status:400});
+  const body=await request.json(); const email=String(body.email??"").trim().toLowerCase(); let creatorId=String(body.creatorId??"").trim();
+  if(!creatorId && body.slug) { const magnet=await prisma.leadMagnet.findUnique({where:{slug:String(body.slug).trim()},select:{creatorId:true,id:true,published:true}}); if(!magnet?.published) return NextResponse.json({error:"Lead magnet not found."},{status:404}); creatorId=magnet.creatorId; body.leadMagnetId=magnet.id; }\n  if(!creatorId||!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({error:"Valid email and creator are required."},{status:400});
   const creator=await prisma.user.findUnique({where:{id:creatorId},include:{profile:true}});
   if(!creator?.profile) return NextResponse.json({error:"Creator not found."},{status:404});
   const magnetId=body.leadMagnetId?String(body.leadMagnetId):null;
