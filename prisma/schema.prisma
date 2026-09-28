@@ -26,6 +26,7 @@ model User {
   bookingSlots BookingSlot[]
   bookings Booking[]
   ownedMemberships Membership[] @relation("MembershipCreator")
+  analyticsEvents AnalyticsEvent[]
   joinedMemberships Membership[] @relation("MembershipMember")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -128,6 +129,21 @@ model Membership {
   @@index([memberUserId,status])
 }
 model LessonProgress { id String @id @default(cuid()); lessonId String; userId String; completed Boolean @default(false); progress Int @default(0); lesson Lesson @relation(fields:[lessonId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); updatedAt DateTime @updatedAt; createdAt DateTime @default(now()); @@unique([lessonId,userId]); @@index([userId]) }
+
+model AnalyticsEvent {
+  id String @id @default(cuid())
+  creatorId String
+  type String
+  path String?
+  referrer String?
+  sessionId String?
+  metadata String?
+  createdAt DateTime @default(now())
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  @@index([creatorId,createdAt])
+  @@index([creatorId,type,createdAt])
+  @@index([creatorId,path,createdAt])
+}
 
 model EmailCampaign {
   id String @id @default(cuid())
