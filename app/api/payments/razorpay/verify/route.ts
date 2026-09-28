@@ -18,6 +18,11 @@ export async function POST(request: Request) {
     }
 
     const expected = crypto.createHmac("sha256", secret).update(razorpayOrderId + "|" + razorpayPaymentId).digest("hex");
+    const paymentCheck = await fetch("https://api.razorpay.com/v1/payments/" + encodeURIComponent(razorpayPaymentId), { headers: { Authorization: "Basic " + Buffer.from(process.env.RAZORPAY_KEY_ID + ":" + secret).toString("base64") } });
+    if (paymentCheck.ok) {
+      const payment = await paymentCheck.json();
+      if (payment.order_id !== razorpayOrderId || Number(payment.amount) !== order.amount || String(payment.currency) !== order.currency) return NextResponse.json({ error: "Payment amount or currency mismatch." }, { status: 400 });
+    }
     if (expected.length !== razorpaySignature.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(razorpaySignature))) {
       await prisma.order.update({ where: { id: order.id }, data: { status: "FAILED" } });
       return NextResponse.json({ error: "Invalid payment signature." }, { status: 400 });
