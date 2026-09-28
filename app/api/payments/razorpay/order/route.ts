@@ -8,9 +8,12 @@ export async function POST(request: Request) {
 
     const order = await prisma.order.findUnique({ where: { id: orderId }, include: { product: true } });
     if (!order) return NextResponse.json({ error: "Order not found." }, { status: 404 });
+    if (order.status !== "PENDING") return NextResponse.json({ error: "Order is no longer payable." }, { status: 409 });
 
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (order.provider === "razorpay" && order.providerId) return NextResponse.json({ orderId: order.id, razorpayOrderId: order.providerId, amount: order.amount, currency: order.currency, keyId });
+
     if (!keyId || !keySecret) {
       return NextResponse.json({
         orderId: order.id,
