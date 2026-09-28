@@ -10,5 +10,5 @@ export async function sendEmail({to,subject,html,from}:SendEmailInput){
 }
 
 export function renderEmailBody(body:string,name?:string){
- return body.replaceAll("{{name}}",name||"there").replaceAll("{{email}}", "");
+ return body.replaceAll("{{name}}",name||"there").replaceAll("{{email}}","");
 }
