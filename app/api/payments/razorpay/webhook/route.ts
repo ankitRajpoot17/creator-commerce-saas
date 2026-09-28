@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { enrollPaidCourse } from "@/lib/enrollment";
+import { activateMembership } from "@/lib/membership";
 
 export async function POST(request: Request) {
   const raw = await request.text();
@@ -19,6 +20,7 @@ export async function POST(request: Request) {
       if (order && event.event === "payment.captured") {
         await prisma.order.update({ where: { id: order.id }, data: { status: "PAID", provider: "razorpay", providerPaymentId: payment.id } });
         await enrollPaidCourse(order.id);
+        await activateMembership(order.id);
       }
       if (order && event.event === "payment.failed") await prisma.order.update({ where: { id: order.id }, data: { status: "FAILED" } });
     }
