@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { enqueueEmailJob } from "@/lib/queue";
 import { createPrivateDownloadUrl } from "@/lib/storage";
+import { emitAutomationEvent } from "@/lib/automation";
 
 export async function GET(){
  const user=await getCurrentUser(); if(!user) return NextResponse.json({error:"Authentication required."},{status:401});
@@ -20,7 +21,7 @@ export async function POST(request:Request){
   const magnetId=body.leadMagnetId?String(body.leadMagnetId):null;
   if(magnetId){const magnet=await prisma.leadMagnet.findFirst({where:{id:magnetId,creatorId,published:true}});if(!magnet)return NextResponse.json({error:"Lead magnet not found."},{status:404});}
   const lead=await prisma.lead.upsert({where:{creatorId_email:{creatorId,email}},update:{name:String(body.name??"").trim()||undefined,source:String(body.source??"").trim()||undefined,leadMagnetId:magnetId},create:{creatorId,email,name:String(body.name??"").trim()||null,source:String(body.source??"").trim()||null,leadMagnetId:magnetId}});
-  const automation=await prisma.emailAutomation.findFirst({where:{creatorId,trigger:"NEW_LEAD",enabled:true}});
+  await emitAutomationEvent({creatorId,payload:{event:{type:"LEAD_CREATED"},lead:{id:lead.id,email:lead.email,name:lead.name,source:lead.source},email:lead.email,name:lead.name||""}}).catch(()=>undefined);\n  const automation=await prisma.emailAutomation.findFirst({where:{creatorId,trigger:"NEW_LEAD",enabled:true}});
   if(automation && process.env.RESEND_API_KEY){
     const steps=await prisma.emailAutomationStep.findMany({where:{automationId:automation.id},orderBy:{position:"asc"}});
     if(steps.length){
