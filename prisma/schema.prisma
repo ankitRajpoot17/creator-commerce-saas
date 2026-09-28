@@ -83,6 +83,7 @@ model BookingSlot {
   price Int @default(0)
   currency String @default("INR")
   available Boolean @default(true)
+  meetingUrl String?
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
   booking Booking?
   createdAt DateTime @default(now())
@@ -102,6 +103,8 @@ model Booking {
   provider String?
   providerOrderId String?
   providerPaymentId String?
+  reminder24SentAt DateTime?
+  reminder1SentAt DateTime?
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
   slot BookingSlot @relation(fields:[slotId],references:[id],onDelete:Cascade)
   createdAt DateTime @default(now())
