@@ -32,7 +32,7 @@ enum LessonType {
   FILE
 }
 model User {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   email String @unique
   name String?
   image String?
@@ -59,7 +59,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-model Session { id String @id @default(cuid())
+model Session {
+id String @id @default(cuid())
 token String @unique
 userId String
 expiresAt DateTime
@@ -68,7 +69,8 @@ createdAt DateTime @default(now())
 @@index([userId])
 @@index([expiresAt])
 }
-model LoginCode { id String @id @default(cuid())
+model LoginCode {
+id String @id @default(cuid())
 userId String
 code String
 attempts Int @default(0)
@@ -78,7 +80,8 @@ createdAt DateTime @default(now())
 @@index([userId,code])
 @@index([expiresAt])
 }
-model CreatorProfile { id String @id @default(cuid())
+model CreatorProfile {
+id String @id @default(cuid())
 userId String @unique
 username String @unique
 displayName String
@@ -92,7 +95,8 @@ products Product[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 }
-model ProfileLink { id String @id @default(cuid())
+model ProfileLink {
+id String @id @default(cuid())
 profileId String
 title String
 url String
@@ -103,7 +107,7 @@ createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 }
 model Product {
-  id String @id @default(cuid())
+id String @id @default(cuid())
 creatorId String
 profileId String
 type ProductType @default(DIGITAL)
@@ -127,7 +131,7 @@ updatedAt DateTime @updatedAt
 @@index([profileId,status])
 }
 model Order {
-  id String @id @default(cuid())
+id String @id @default(cuid())
 productId String
 creatorId String
 buyerEmail String
@@ -145,7 +149,8 @@ updatedAt DateTime @updatedAt
 @@index([buyerEmail])
 @@index([providerId])
 }
-model Course { id String @id @default(cuid())
+model Course {
+id String @id @default(cuid())
 productId String @unique
 title String
 description String?
@@ -155,7 +160,8 @@ enrollments Enrollment[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 }
-model CourseModule { id String @id @default(cuid())
+model CourseModule {
+id String @id @default(cuid())
 courseId String
 title String
 position Int @default(0)
@@ -165,7 +171,8 @@ createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 @@index([courseId,position])
 }
-model Lesson { id String @id @default(cuid())
+model Lesson {
+id String @id @default(cuid())
 moduleId String
 title String
 type LessonType @default(VIDEO)
@@ -178,7 +185,8 @@ createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 @@index([moduleId,position])
 }
-model Enrollment { id String @id @default(cuid())
+model Enrollment {
+id String @id @default(cuid())
 courseId String
 productId String
 userId String
@@ -190,7 +198,7 @@ createdAt DateTime @default(now())
 @@index([userId])
 }
 model Lead {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   email String
   name String?
@@ -204,7 +212,7 @@ model Lead {
   @@index([creatorId,createdAt])
 }
 model LeadMagnet {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   name String
   description String?
@@ -219,7 +227,7 @@ model LeadMagnet {
   @@index([creatorId,published])
 }
 model BookingSlot {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   startAt DateTime
   endAt DateTime
@@ -234,7 +242,7 @@ model BookingSlot {
   @@index([creatorId,startAt])
 }
 model Booking {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   slotId String @unique
   customerEmail String
@@ -257,7 +265,7 @@ model Booking {
   @@index([customerEmail])
 }
 model Membership {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   productId String
   memberUserId String
@@ -271,7 +279,8 @@ model Membership {
   @@index([creatorId,status])
   @@index([memberUserId,status])
 }
-model LessonProgress { id String @id @default(cuid())
+model LessonProgress {
+id String @id @default(cuid())
 lessonId String
 userId String
 completed Boolean @default(false)
@@ -285,7 +294,7 @@ createdAt DateTime @default(now())
 }
 
 model Event {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   name String
   slug String @unique
@@ -304,7 +313,7 @@ model Event {
   @@index([creatorId,startsAt])
 }
 model EventRegistration {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   eventId String
   email String
   name String?
@@ -318,7 +327,7 @@ model EventRegistration {
   @@index([email])
 }
 model SaaSPlan {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   name String @unique
   monthlyPrice Int @default(0)
   yearlyPrice Int @default(0)
@@ -328,7 +337,7 @@ model SaaSPlan {
   subscriptions Subscription[]
 }
 model Subscription {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   userId String
   planId String
   provider String
@@ -345,7 +354,7 @@ model Subscription {
   @@unique([userId,planId])
 }
 model CommunityConnection {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   provider String
   externalId String?
@@ -356,7 +365,7 @@ model CommunityConnection {
 }
 
 model AnalyticsEvent {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   type String
   path String?
@@ -371,7 +380,7 @@ model AnalyticsEvent {
 }
 
 model EmailCampaign {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   name String
   subject String
@@ -388,7 +397,7 @@ model EmailCampaign {
 }
 
 model EmailAutomation {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   name String
   trigger String
@@ -403,7 +412,7 @@ model EmailAutomation {
 }
 
 model EmailAutomationStep {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   automationId String
   position Int @default(0)
   delayHours Int @default(0)
@@ -414,7 +423,7 @@ model EmailAutomationStep {
 }
 
 model EmailDelivery {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   campaignId String?
   recipientEmail String
   recipientName String?
@@ -431,7 +440,7 @@ model EmailDelivery {
 }
 
 model EmailUnsubscribe {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   creatorId String
   email String
   createdAt DateTime @default(now())
@@ -441,7 +450,7 @@ model EmailUnsubscribe {
 }
 
 model WebhookEvent {
-  id String @id @default(cuid())
+id String @id @default(cuid())
   provider String
   eventId String
   eventType String
