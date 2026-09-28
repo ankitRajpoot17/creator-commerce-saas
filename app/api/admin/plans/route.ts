@@ -1,0 +1,3 @@
+import {NextResponse} from "next/server";import {prisma} from "@/lib/prisma";import {getCurrentUser} from "@/lib/auth";
+export async function GET(){const u=await getCurrentUser();if(!u||u.role!=="ADMIN")return NextResponse.json({error:"Admin access required."},{status:403});return NextResponse.json({plans:await prisma.saaSPlan.findMany()});}
+export async function POST(req:Request){const u=await getCurrentUser();if(!u||u.role!=="ADMIN")return NextResponse.json({error:"Admin access required."},{status:403});const b=await req.json();return NextResponse.json({plan:await prisma.saaSPlan.create({data:{name:String(b.name||"").trim(),monthlyPrice:Math.max(0,Number(b.monthlyPrice)||0),yearlyPrice:Math.max(0,Number(b.yearlyPrice)||0)}})},{status:201});}
