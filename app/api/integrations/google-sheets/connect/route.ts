@@ -1,0 +1,5 @@
+import {NextResponse} from "next/server";
+import crypto from "crypto";
+import {getCurrentUser} from "@/lib/auth";
+function sign(v:string){return crypto.createHmac("sha256",process.env.NEXTAUTH_SECRET||"integration-state").update(v).digest("base64url");}
+export async function GET(req:Request){const u=await getCurrentUser();if(!u)return NextResponse.json({error:"Authentication required."},{status:401});const id=process.env.GOOGLE_CLIENT_ID,redirect=process.env.GOOGLE_REDIRECT_URI;if(!id||!redirect)return NextResponse.json({error:"Google OAuth is not configured."},{status:503});const data=Buffer.from(JSON.stringify({userId:u.id,ts:Date.now()})).toString("base64url");const state=data+"."+sign(data);const q=new URLSearchParams({client_id:id,redirect_uri:redirect,response_type:"code",access_type:"offline",prompt:"consent",scope:"https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email",state});return NextResponse.redirect("https://accounts.google.com/o/oauth2/v2/auth?"+q.toString());}
