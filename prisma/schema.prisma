@@ -22,6 +22,7 @@ model User {
   products Product[]
   orders Order[]
   sessions Session[]
+  loginCodes LoginCode[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -34,6 +35,17 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   @@index([userId])
+  @@index([expiresAt])
+}
+
+model LoginCode {
+  id String @id @default(cuid())
+  userId String
+  code String
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([userId, code])
   @@index([expiresAt])
 }
 
