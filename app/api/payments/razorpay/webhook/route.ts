@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!signature || !secret) return NextResponse.json({ error: "Webhook is not configured." }, { status: 400 });
   const expected = crypto.createHmac("sha256", secret).update(raw).digest("hex");
-  if (expected !== signature) return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
+  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
   try {
     const event = JSON.parse(raw);
     const payment = event?.payload?.payment?.entity;
@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     if (razorpayOrderId) {
       const order = await prisma.order.findFirst({ where: { providerId: razorpayOrderId } });
       if (order && event.event === "payment.captured") {
+        if (Number(payment.amount) !== order.amount || String(payment.currency) !== order.currency) return NextResponse.json({ error: "Payment amount or currency mismatch." }, { status: 400 });
         if (order.status !== "PAID") {
           await prisma.order.update({ where: { id: order.id }, data: { status: "PAID", provider: "razorpay", providerPaymentId: payment.id } });
           await prisma.analyticsEvent.create({ data: { creatorId: order.creatorId, type: "SALE", path: "/checkout/" + order.productId, metadata: JSON.stringify({ orderId: order.id, productId: order.productId, amount: order.amount, currency: order.currency }) } });
