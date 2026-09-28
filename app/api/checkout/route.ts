@@ -1,8 +1,10 @@
+import { rateLimit, requestKey } from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 export async function POST(request: Request) {
+ const rl=await rateLimit(requestKey(request,"checkout"),20,60); if(!rl.allowed)return NextResponse.json({error:"Too many checkout attempts."},{status:429});
   try {
     const { productId, buyerEmail } = await request.json();
     if (!productId || !buyerEmail) return NextResponse.json({ error: "Product and buyer email are required." }, { status: 400 });
