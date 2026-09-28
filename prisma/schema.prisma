@@ -94,7 +94,8 @@ profile CreatorProfile @relation(fields:[profileId],references:[id],onDelete:Cas
 orders Order[]
 course Course?
 enrollments Enrollment[]
-createdAt DateTime @default(now())
+  memberships Membership[]
+  createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 @@index([profileId,status])
 }
@@ -109,6 +110,7 @@ status OrderStatus @default(PENDING)
 provider String?
 providerId String?
 providerPaymentId String?
+  downloadToken String? @unique
   product Product @relation(fields:[productId],references:[id])
 creator User @relation(fields:[creatorId],references:[id])
 createdAt DateTime @default(now())
