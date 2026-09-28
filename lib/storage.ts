@@ -23,3 +23,22 @@ export function verifyUploadToken(token: string, userId: string, productId: stri
     return false;
   }
 }
+
+export function createSignedDownloadUrl(fileUrl: string, orderId: string) {
+  const secret = process.env.S3_SECRET_KEY || process.env.NEXTAUTH_SECRET;
+  if (!secret) throw new Error("Storage secret is not configured.");
+  const expires = Date.now() + 15 * 60 * 1000;
+  const payload = orderId + ":" + expires;
+  const signature = crypto.createHmac("sha256", secret).update(payload).digest("hex");
+  const separator = fileUrl.includes("?") ? "&" : "?";
+  return fileUrl + separator + "download_order=" + encodeURIComponent(orderId) + "&download_expires=" + expires + "&download_sig=" + signature;
+}
+
+export function verifySignedDownload(orderId: string, expires: string, signature: string) {
+  const secret = process.env.S3_SECRET_KEY || process.env.NEXTAUTH_SECRET;
+  if (!secret || !orderId || !expires || !signature) return false;
+  const expiry = Number(expires);
+  if (!Number.isFinite(expiry) || Date.now() > expiry) return false;
+  const expected = crypto.createHmac("sha256", secret).update(orderId + ":" + expiry).digest("hex");
+  try { return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected)); } catch { return false; }
+}
