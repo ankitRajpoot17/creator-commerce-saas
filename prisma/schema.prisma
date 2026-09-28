@@ -21,8 +21,20 @@ model User {
   profile CreatorProfile?
   products Product[]
   orders Order[]
+  sessions Session[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Session {
+  id String @id @default(cuid())
+  token String @unique
+  userId String
+  expiresAt DateTime
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model CreatorProfile {
@@ -34,7 +46,7 @@ model CreatorProfile {
   avatarUrl String?
   theme String @default("minimal")
   published Boolean @default(false)
-  user User @relation(fields:[userId], references:[id], onDelete:Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   links ProfileLink[]
   products Product[]
   createdAt DateTime @default(now())
@@ -48,7 +60,7 @@ model ProfileLink {
   url String
   position Int @default(0)
   enabled Boolean @default(true)
-  profile CreatorProfile @relation(fields:[profileId], references:[id], onDelete:Cascade)
+  profile CreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -66,8 +78,8 @@ model Product {
   currency String @default("INR")
   fileUrl String?
   coverUrl String?
-  creator User @relation(fields:[creatorId], references:[id], onDelete:Cascade)
-  profile CreatorProfile @relation(fields:[profileId], references:[id], onDelete:Cascade)
+  creator User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  profile CreatorProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   orders Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -84,8 +96,8 @@ model Order {
   status OrderStatus @default(PENDING)
   provider String?
   providerId String?
-  product Product @relation(fields:[productId], references:[id])
-  creator User @relation(fields:[creatorId], references:[id])
+  product Product @relation(fields: [productId], references: [id])
+  creator User @relation(fields: [creatorId], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([buyerEmail])
