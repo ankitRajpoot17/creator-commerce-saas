@@ -173,6 +173,8 @@ model EmailDelivery {
   subject String
   status String @default("SENT")
   providerId String?
+  automationId String?
+  stepId String?
   error String?
   sentAt DateTime @default(now())
   campaign EmailCampaign? @relation(fields:[campaignId],references:[id],onDelete:SetNull)
