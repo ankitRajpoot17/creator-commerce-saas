@@ -185,6 +185,7 @@ model Subscription {
   updatedAt DateTime @updatedAt
   @@index([userId,status])
   @@index([providerSubscriptionId])
+  @@unique([userId,planId])
 }
 model CommunityConnection {
   id String @id @default(cuid())
