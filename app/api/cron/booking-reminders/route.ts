@@ -15,8 +15,10 @@ export async function GET(req:Request){
   const when=b.slot.startAt.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
   const meeting=b.slot.meetingUrl?'<p><a href="'+b.slot.meetingUrl+'">Join meeting</a></p>':"";
   const subject="Session reminder — "+when;
-  await sendEmail({to:b.customerEmail,subject,html:"<div><p>Your session with "+(b.creator.profile?.displayName||"the creator")+" is scheduled for "+when+".</p>"+meeting+"</div>"});
-  if(b.creator.email)await sendEmail({to:b.creator.email,subject,html:"<div><p>Your session with "+(b.customerName||b.customerEmail)+" is scheduled for "+when+".</p>"+meeting+"</div>"});
+  const customerResult=await sendEmail({to:b.customerEmail,subject,html:"<div><p>Your session with "+(b.creator.profile?.displayName||"the creator")+" is scheduled for "+when+".</p>"+meeting+"</div>"});
+  let creatorResult={sent:true};
+  if(b.creator.email) creatorResult=await sendEmail({to:b.creator.email,subject,html:"<div><p>Your session with "+(b.customerName||b.customerEmail)+" is scheduled for "+when+".</p>"+meeting+"</div>"});
+  if(!customerResult.sent && !creatorResult.sent) continue;
   await prisma.booking.update({where:{id:b.id},data:kind==="24"?{reminder24SentAt:new Date()}:{reminder1SentAt:new Date()}});
   sent[kind==="24"?"reminder24":"reminder1"]++;
  }
