@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!signature || !secret) return NextResponse.json({ error: "Webhook is not configured." }, { status: 400 });
   const expected = crypto.createHmac("sha256", secret).update(raw).digest("hex");
-  if (!crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
+  if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
   try {
     const event = JSON.parse(raw);
     const payment = event?.payload?.payment?.entity;
@@ -27,6 +27,18 @@ export async function POST(request: Request) {
         await activateMembership(order.id);
       }
       if (order && event.event === "payment.failed") await prisma.order.update({ where: { id: order.id }, data: { status: "FAILED" } });
+    }
+    const subscription=event?.payload?.subscription?.entity;
+    if(subscription?.id){
+      const sub=await prisma.subscription.findFirst({where:{provider:"razorpay",providerSubscriptionId:subscription.id}});
+      if(sub){
+        const statusMap:Record<string,string>={"subscription.activated":"ACTIVE","subscription.charged":"ACTIVE","subscription.resumed":"ACTIVE","subscription.paused":"PAUSED","subscription.cancelled":"CANCELLED","subscription.completed":"EXPIRED"};
+        const nextStatus=statusMap[event.event];
+        if(nextStatus){
+          const currentEnd=Number(subscription.current_end||0);
+          await prisma.subscription.update({where:{id:sub.id},data:{status:nextStatus,currentPeriodEnd:currentEnd?new Date(currentEnd*1000):sub.currentPeriodEnd}});
+        }
+      }
     }
     return NextResponse.json({ received: true });
   } catch { return NextResponse.json({ error: "Invalid webhook payload." }, { status: 400 }); }
