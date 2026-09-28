@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { enrollPaidCourse } from "@/lib/enrollment";
 import { activateMembership } from "@/lib/membership";
 import { sendEmail, renderEmailBody } from "@/lib/email";
+import { emitAutomationEvent } from "@/lib/automation";
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
       data: { status: "PAID", provider: "razorpay", providerPaymentId: razorpayPaymentId },
     });
 
-    await prisma.analyticsEvent.create({ data: { creatorId: paid.creatorId, type: "SALE", path: "/checkout/" + paid.productId, metadata: JSON.stringify({ orderId: paid.id, productId: paid.productId, amount: paid.amount, currency: paid.currency }) } });
+    await emitAutomationEvent({creatorId:paid.creatorId,payload:{event:{type:"ORDER_PAID"},order:{id:paid.id,email:paid.buyerEmail,amount:paid.amount,currency:paid.currency,status:paid.status,productId:paid.productId},email:paid.buyerEmail}}).catch(()=>undefined);\n\n    await prisma.analyticsEvent.create({ data: { creatorId: paid.creatorId, type: "SALE", path: "/checkout/" + paid.productId, metadata: JSON.stringify({ orderId: paid.id, productId: paid.productId, amount: paid.amount, currency: paid.currency }) } });
 
     if (process.env.RESEND_API_KEY && paid.downloadToken) {
       const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
