@@ -4,8 +4,7 @@ import { isValidUsername } from "@/lib/validation";
 
 export async function GET(request: Request) {
   const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
-  if (!username) return NextResponse.json({ error: "Username is required." }, { status: 400 });
-
+  if (!username || !isValidUsername(username)) return NextResponse.json({ error: "Valid username is required." }, { status: 400 });
   const profile = await prisma.creatorProfile.findUnique({
     where: { username },
     include: { links: { where: { enabled: true }, orderBy: { position: "asc" } } },
@@ -18,26 +17,19 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const username = String(body.username ?? "").trim().toLowerCase();
-    const displayName = String(body.displayName ?? "").trim();
-    const bio = String(body.bio ?? "").trim();
-
-    if (!isValidUsername(username)) return NextResponse.json({ error: "Invalid username." }, { status: 400 });
-    if (!displayName) return NextResponse.json({ error: "Display name is required." }, { status: 400 });
-
-    const existing = await prisma.creatorProfile.findUnique({ where: { username } });
-    if (existing) return NextResponse.json({ error: "Username is already taken." }, { status: 409 });
-
-    const user = await prisma.user.create({
-      data: {
-        email: `${username}@placeholder.local`,
-        name: displayName,
-        profile: { create: { username, displayName, bio, published: true } },
-      },
-      include: { profile: true },
-    });
-    return NextResponse.json({ userId: user.id, username: user.profile?.username });
+    const displayName = String(body.displayName ?? username).trim();
+    const email = String(body.email ?? "").trim().toLowerCase();
+    if (!isValidUsername(username) || !displayName || !email) return NextResponse.json({ error: "Username, display name and email are required." }, { status: 400 });
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing?.profile) return NextResponse.json({ error: "An account already exists for this email." }, { status: 409 });
+    if (existing) {
+      const profile = await prisma.creatorProfile.create({ data: { userId: existing.id, username, displayName } });
+      return NextResponse.json({ profile }, { status: 201 });
+    }
+    const user = await prisma.user.create({ data: { email, name: displayName, profile: { create: { username, displayName } } }, include: { profile: true } });
+    return NextResponse.json({ profile: user.profile }, { status: 201 });
   } catch {
-    return NextResponse.json({ error: "Database is not configured or the request failed." }, { status: 500 });
+    return NextResponse.json({ error: "Unable to create profile." }, { status: 500 });
   }
 }
 
@@ -45,17 +37,15 @@ export async function PATCH(request: Request) {
   try {
     const body = await request.json();
     const username = String(body.username ?? "").trim().toLowerCase();
-    const displayName = String(body.displayName ?? "").trim();
-    const bio = String(body.bio ?? "").trim();
-    const theme = String(body.theme ?? "minimal");
-    const avatarUrl = String(body.avatarUrl ?? "").trim();
-
-    if (!isValidUsername(username)) return NextResponse.json({ error: "Invalid username." }, { status: 400 });
-    if (!displayName) return NextResponse.json({ error: "Display name is required." }, { status: 400 });
-
+    if (!username) return NextResponse.json({ error: "Username is required." }, { status: 400 });
     const profile = await prisma.creatorProfile.update({
       where: { username },
-      data: { displayName, bio, theme, avatarUrl: avatarUrl || null },
+      data: {
+        displayName: body.displayName === undefined ? undefined : String(body.displayName).trim(),
+        bio: body.bio === undefined ? undefined : String(body.bio).trim() || null,
+        avatarUrl: body.avatarUrl === undefined ? undefined : String(body.avatarUrl).trim() || null,
+        theme: body.theme === undefined ? undefined : String(body.theme).trim(),
+      },
     });
     return NextResponse.json({ profile });
   } catch {
