@@ -23,10 +23,19 @@ async function postJson(url:string,body:unknown,secret?:string) {
   if(!res.ok) throw new Error("HTTP "+res.status);
   return res.status;
 }
+async function refreshGoogleAccessToken(credentials:Record<string,any>) {
+  if (credentials.accessToken && Number(credentials.expiresAt||0)>Date.now()+60000) return credentials;
+  if (!credentials.refreshToken || !process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) return credentials;
+  const res=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:new URLSearchParams({client_id:process.env.GOOGLE_CLIENT_ID,client_secret:process.env.GOOGLE_CLIENT_SECRET,refresh_token:String(credentials.refreshToken),grant_type:"refresh_token"})});
+  if(!res.ok) throw new Error("Google token refresh failed");
+  const token=await res.json();
+  return {...credentials,accessToken:token.access_token,expiresAt:Date.now()+Number(token.expires_in||3600)*1000};
+}
 async function execute(step:{id:string;action:string;config:unknown},connection:{provider:string;credentials:string}|null,payload:Record<string,unknown>) {
   const c=(step.config||{}) as Record<string,unknown>;
   const provider=connection?.provider;
-  const credentials=connection?.credentials?decryptJson<Record<string,any>>(connection.credentials):{};
+  let credentials=connection?.credentials?decryptJson<Record<string,any>>(connection.credentials):{};
+  if(provider==="GOOGLE_SHEETS") credentials=await refreshGoogleAccessToken(credentials);
   const url=String(c.url||credentials.webhookUrl||"");
   switch(step.action){
     case "WEBHOOK_POST":
