@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateOtp } from "@/lib/auth";
+import { sendEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   try {
