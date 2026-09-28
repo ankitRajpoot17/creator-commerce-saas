@@ -21,6 +21,8 @@ model User {
   enrollments Enrollment[]
   lessonProgress LessonProgress[]
   leads Lead[]
+  bookingSlots BookingSlot[]
+  bookings Booking[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -67,5 +69,36 @@ model LeadMagnet {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@index([creatorId,published])
+}
+model BookingSlot {
+  id String @id @default(cuid())
+  creatorId String
+  startAt DateTime
+  endAt DateTime
+  price Int @default(0)
+  currency String @default("INR")
+  available Boolean @default(true)
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  booking Booking?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([creatorId,startAt])
+}
+model Booking {
+  id String @id @default(cuid())
+  creatorId String
+  slotId String @unique
+  customerEmail String
+  customerName String?
+  note String?
+  amount Int @default(0)
+  currency String @default("INR")
+  status String @default("PENDING")
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  slot BookingSlot @relation(fields:[slotId],references:[id],onDelete:Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([creatorId,status])
+  @@index([customerEmail])
 }
 model LessonProgress { id String @id @default(cuid()); lessonId String; userId String; completed Boolean @default(false); progress Int @default(0); lesson Lesson @relation(fields:[lessonId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); updatedAt DateTime @updatedAt; createdAt DateTime @default(now()); @@unique([lessonId,userId]); @@index([userId]) }
