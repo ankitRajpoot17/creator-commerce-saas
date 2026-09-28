@@ -1,0 +1,1 @@
+export default function Loading(){return <main style={{padding:64,textAlign:"center",fontFamily:"Arial"}}><p>Loading Creator Commerce…</p></main>}
