@@ -1,8 +1,10 @@
+import {rateLimit,requestKey} from "@/lib/rate-limit";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { createSession, AUTH_LIMITS } from "@/lib/auth";
 
 export async function POST(request: Request) {
+    const rl=await rateLimit(requestKey(request,"otp-verify"),20,60); if(!rl.allowed)return NextResponse.json({error:"Too many verification attempts."},{status:429});
   try {
     const body = await request.json();
     const email = String(body.email ?? "").trim().toLowerCase();
