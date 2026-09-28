@@ -1,0 +1,1 @@
+export default function ProductsPage() { return <main style={{padding:48}}><a href="/dashboard">← Dashboard</a><h1>Digital Products</h1><p>Product management module is ready for the next commerce integration.</p></main>; }
