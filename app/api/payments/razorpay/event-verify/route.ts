@@ -18,7 +18,7 @@ export async function POST(req:Request){
   if(payment.order_id!==orderId||Number(payment.amount)!==reg.event.price||String(payment.currency)!==reg.event.currency)return NextResponse.json({error:"Payment amount or currency mismatch."},{status:400});
   if(payment.status&&payment.status!=="captured"&&payment.status!=="authorized")return NextResponse.json({error:"Payment has not been captured."},{status:409});
   const updated=await prisma.eventRegistration.update({where:{id:reg.id},data:{status:"REGISTERED",providerPaymentId:paymentId}});
-  if(process.env.RESEND_API_KEY)await sendEmail({to:updated.email,subject:"Event registration confirmed",html:"<p>Your registration for <strong>"+renderEmailBody(reg.event.name)+"</strong> is confirmed.</p><p>"+renderEmailBody(reg.event.startsAt.toLocaleString("en-IN"))+"</p>"+(reg.event.meetingUrl?"<p><a href=""+renderEmailBody(reg.event.meetingUrl)+"">Join event</a></p>":"")});
+  if(process.env.RESEND_API_KEY)await sendEmail({to:updated.email,subject:"Event registration confirmed",html:"<p>Your registration for <strong>"+renderEmailBody(reg.event.name)+"</strong> is confirmed.</p><p>"+renderEmailBody(reg.event.startsAt.toLocaleString("en-IN"))+"</p>"+(reg.event.meetingUrl?"<p><a href=\\\""+renderEmailBody(reg.event.meetingUrl)+"\\\">Join event</a></p>":"")});
   return NextResponse.json({success:true,registration:updated});
  }catch{return NextResponse.json({error:"Unable to verify event payment."},{status:500});}
 }
