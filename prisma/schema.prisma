@@ -5,11 +5,11 @@ datasource db {
   provider = "postgresql"
   url = env("DATABASE_URL")
 }
-enum UserRole { CREATOR ADMIN CUSTOMER }
-enum ProductType { DIGITAL COURSE MEMBERSHIP }
-enum ProductStatus { DRAFT PUBLISHED ARCHIVED }
-enum OrderStatus { PENDING PAID FAILED REFUNDED }
-enum LessonType { VIDEO TEXT FILE }
+enum UserRole {\n  CREATOR\n  ADMIN\n  CUSTOMER\n}
+enum ProductType {\n  DIGITAL\n  COURSE\n  MEMBERSHIP\n}
+enum ProductStatus {\n  DRAFT\n  PUBLISHED\n  ARCHIVED\n}
+enum OrderStatus {\n  PENDING\n  PAID\n  FAILED\n  REFUNDED\n}
+enum LessonType {\n  VIDEO\n  TEXT\n  FILE\n}
 model User {
   id String @id @default(cuid())
   email String @unique
