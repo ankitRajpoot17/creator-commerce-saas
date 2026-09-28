@@ -58,6 +58,8 @@ id String @id @default(cuid())
   emailUnsubscribes EmailUnsubscribe[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  leadMagnets LeadMagnet[]
+
 }
 model Session {
 id String @id @default(cuid())
