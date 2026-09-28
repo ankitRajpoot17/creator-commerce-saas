@@ -60,6 +60,9 @@ id String @id @default(cuid())
   updatedAt DateTime @updatedAt
   leadMagnets LeadMagnet[]
 
+  integrationConnections IntegrationConnection[]
+  automations Automation[]
+  integrationDeliveries IntegrationDeliveryLog[]
 }
 model Session {
 id String @id @default(cuid())
@@ -462,4 +465,82 @@ id String @id @default(cuid())
   createdAt DateTime @default(now())
   @@unique([provider,eventId])
   @@index([provider,eventType,createdAt])
+}
+
+
+enum IntegrationProvider {
+  GOOGLE_SHEETS
+  SLACK
+  DISCORD
+  TELEGRAM
+  WEBHOOK
+}
+enum IntegrationStatus {
+  CONNECTED
+  ERROR
+  DISCONNECTED
+}
+enum AutomationStatus {
+  ACTIVE
+  PAUSED
+}
+model IntegrationConnection {
+  id String @id @default(cuid())
+  creatorId String
+  provider IntegrationProvider
+  name String
+  status IntegrationStatus @default(CONNECTED)
+  credentials String
+  metadata String?
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  automations Automation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([creatorId,provider])
+}
+model Automation {
+  id String @id @default(cuid())
+  creatorId String
+  name String
+  trigger String
+  status AutomationStatus @default(ACTIVE)
+  conditions Json?
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  connection IntegrationConnection? @relation(fields:[connectionId],references:[id],onDelete:SetNull)
+  connectionId String?
+  steps AutomationStep[]
+  deliveries IntegrationDeliveryLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([creatorId,status])
+  @@index([creatorId,trigger,status])
+}
+model AutomationStep {
+  id String @id @default(cuid())
+  automationId String
+  position Int @default(0)
+  action String
+  config Json
+  enabled Boolean @default(true)
+  automation Automation @relation(fields:[automationId],references:[id],onDelete:Cascade)
+  deliveries IntegrationDeliveryLog[]
+  @@unique([automationId,position])
+}
+model IntegrationDeliveryLog {
+  id String @id @default(cuid())
+  creatorId String
+  automationId String?
+  stepId String?
+  provider String
+  eventType String
+  status String
+  responseStatus Int?
+  error String?
+  attempts Int @default(1)
+  createdAt DateTime @default(now())
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  automation Automation? @relation(fields:[automationId],references:[id],onDelete:SetNull)
+  step AutomationStep? @relation(fields:[stepId],references:[id],onDelete:SetNull)
+  @@index([creatorId,createdAt])
+  @@index([automationId,createdAt])
 }
