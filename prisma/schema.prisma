@@ -7,7 +7,7 @@ datasource db {
   url = env("DATABASE_URL")
 }
 
-enum UserRole { CREATOR ADMIN }
+enum UserRole { CREATOR ADMIN CUSTOMER }
 enum ProductType { DIGITAL COURSE MEMBERSHIP }
 enum ProductStatus { DRAFT PUBLISHED ARCHIVED }
 enum OrderStatus { PENDING PAID FAILED REFUNDED }
@@ -113,6 +113,7 @@ model Order {
   status OrderStatus @default(PENDING)
   provider String?
   providerId String?
+  providerPaymentId String?
   product Product @relation(fields: [productId], references: [id])
   creator User @relation(fields: [creatorId], references: [id])
   createdAt DateTime @default(now())
