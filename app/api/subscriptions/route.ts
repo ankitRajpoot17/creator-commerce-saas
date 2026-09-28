@@ -20,12 +20,13 @@ export async function POST(req:Request){
    return NextResponse.json({subscription:sub},{status:201});
   }
   if(provider!=="razorpay")return NextResponse.json({error:"Unsupported billing provider."},{status:400});
-  if(!plan.razorpayPlanId)return NextResponse.json({error:"This plan is not configured for Razorpay recurring billing."},{status:503});
+  const razorpayPlanId=interval==="YEARLY"?plan.razorpayYearlyPlanId:plan.razorpayMonthlyPlanId;
+  if(!razorpayPlanId)return NextResponse.json({error:"This billing interval is not configured for Razorpay recurring billing."},{status:503});
   const key=process.env.RAZORPAY_KEY_ID,secret=process.env.RAZORPAY_KEY_SECRET;
   if(!key||!secret)return NextResponse.json({error:"Razorpay is not configured."},{status:503});
   const existing=await prisma.subscription.findFirst({where:{userId:u.id,status:"ACTIVE",provider:"razorpay",planId:plan.id}});
   if(existing?.providerSubscriptionId)return NextResponse.json({subscription:existing,mode:"existing"});
-  const response=await fetch("https://api.razorpay.com/v1/subscriptions",{method:"POST",headers:{Authorization:"Basic "+Buffer.from(key+":"+secret).toString("base64"),"Content-Type":"application/json"},body:JSON.stringify({plan_id:plan.razorpayPlanId,total_count:interval==="YEARLY"?10:120,customer_notify:1,notes:{userId:u.id,planId:plan.id,interval}})});
+  const response=await fetch("https://api.razorpay.com/v1/subscriptions",{method:"POST",headers:{Authorization:"Basic "+Buffer.from(key+":"+secret).toString("base64"),"Content-Type":"application/json"},body:JSON.stringify({plan_id:razorpayPlanId,total_count:interval==="YEARLY"?10:120,customer_notify:1,notes:{userId:u.id,planId:plan.id,interval}})});
   const data=await response.json();
   if(!response.ok)return NextResponse.json({error:data?.error?.description||"Unable to create subscription."},{status:502});
   await prisma.subscription.updateMany({where:{userId:u.id,status:"ACTIVE"},data:{status:"CANCELLED"}});
