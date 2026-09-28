@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "product";
     let slug = base, counter = 1;
     while (await prisma.product.findUnique({ where: { slug } })) slug = base + "-" + counter++;
-    const product = await prisma.product.create({ data: { creatorId: user.id, profileId: profile.id, name, slug, price, description: String(body.description ?? "").trim() || null, fileUrl: String(body.fileUrl ?? "").trim() || null, coverUrl: String(body.coverUrl ?? "").trim() || null } });
+    const product = await prisma.product.create({ data: { creatorId: user.id, profileId: profile.id, name, slug, price, description: String(body.description ?? "").trim() || null, fileUrl: String(body.fileUrl ?? "").trim() || null, coverUrl: String(body.coverUrl ?? "").trim() || null, type: body.type === "COURSE" ? "COURSE" : body.type === "MEMBERSHIP" ? "MEMBERSHIP" : "DIGITAL" } });
     return NextResponse.json({ product }, { status: 201 });
   } catch { return NextResponse.json({ error: "Unable to create product." }, { status: 500 }); }
 }
