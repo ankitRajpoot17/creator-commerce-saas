@@ -26,6 +26,22 @@ export async function createUploadUrl(key: string, contentType: string) {
   return getSignedUrl(client(), command, { expiresIn: 900 });
 }
 
+export function createUploadToken(userId: string, productId: string) {
+  return createPrivateFileKey(userId, productId, "legacy");
+}
+
+export function verifyUploadToken(_token: string, _userId: string, _productId: string) {
+  return false;
+}
+
+export function createSignedDownloadUrl(fileUrl: string) {
+  return fileUrl;
+}
+
+export function verifySignedDownload(_orderId: string, _expires: string, _signature: string) {
+  return false;
+}
+
 export async function createPrivateDownloadUrl(key: string) {
   const command = new GetObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key });
   return getSignedUrl(client(), command, { expiresIn: 900 });
