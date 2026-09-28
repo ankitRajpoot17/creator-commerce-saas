@@ -16,6 +16,8 @@ export async function PATCH(request:Request){
  const user=await getCurrentUser(); if(!user)return NextResponse.json({error:"Authentication required."},{status:401});
  const b=await request.json(); const item=await prisma.leadMagnet.findUnique({where:{id:String(b.id??"")}});
  if(!item||item.creatorId!==user.id)return NextResponse.json({error:"Lead magnet not found."},{status:404});
- const magnet=await prisma.leadMagnet.update({where:{id:item.id},data:{name:b.name===undefined?undefined:String(b.name).trim(),description:b.description===undefined?undefined:String(b.description).trim()||null,fileUrl:b.fileUrl===undefined?undefined:String(b.fileUrl).trim()||null,fileKey:b.fileKey===undefined?undefined:String(b.fileKey).trim()||null,published:b.published===undefined?undefined:Boolean(b.published)}});
+ const nextFileKey=b.fileKey===undefined?undefined:String(b.fileKey).trim()||null;
+ if(nextFileKey&&!nextFileKey.startsWith(`creators/${user.id}/products/lead-${item.id}/`))return NextResponse.json({error:"Invalid private file key."},{status:400});
+ const magnet=await prisma.leadMagnet.update({where:{id:item.id},data:{name:b.name===undefined?undefined:String(b.name).trim(),description:b.description===undefined?undefined:String(b.description).trim()||null,fileUrl:b.fileUrl===undefined?undefined:String(b.fileUrl).trim()||null,fileKey:nextFileKey,published:b.published===undefined?undefined:Boolean(b.published)}});
  return NextResponse.json({leadMagnet:magnet});
 }
