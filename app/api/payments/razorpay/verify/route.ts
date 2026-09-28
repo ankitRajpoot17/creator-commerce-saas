@@ -23,10 +23,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid payment signature." }, { status: 400 });
     }
 
+    if (order.status === "PAID") return NextResponse.json({ success: true, order });
+
     const paid = await prisma.order.update({
       where: { id: order.id },
       data: { status: "PAID", provider: "razorpay", providerPaymentId: razorpayPaymentId },
     });
+
+    await prisma.analyticsEvent.create({ data: { creatorId: paid.creatorId, type: "SALE", path: "/checkout/" + paid.productId, metadata: JSON.stringify({ orderId: paid.id, productId: paid.productId, amount: paid.amount, currency: paid.currency }) } });
 
     if (paid.productId) {
       await enrollPaidCourse(order.id);
