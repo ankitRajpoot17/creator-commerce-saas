@@ -284,6 +284,7 @@ model SaaSPlan {
   name String @unique
   monthlyPrice Int @default(0)
   yearlyPrice Int @default(0)
+  razorpayPlanId String?
   active Boolean @default(true)
   subscriptions Subscription[]
 }
@@ -293,6 +294,7 @@ model Subscription {
   planId String
   provider String
   providerSubscriptionId String?
+  billingInterval String @default("MONTHLY")
   status String @default("ACTIVE")
   currentPeriodEnd DateTime?
   user User @relation(fields:[userId],references:[id],onDelete:Cascade)
