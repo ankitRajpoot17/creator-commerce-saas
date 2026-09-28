@@ -10,6 +10,8 @@ export async function POST(request: Request) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
 
     const user = await prisma.user.upsert({ where: { email }, update: {}, create: { email } });
+    const recent = await prisma.loginCode.count({ where: { userId: user.id, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } } });
+    if (recent >= 5) return NextResponse.json({ error: "Too many OTP requests. Try again later." }, { status: 429 });
     await prisma.loginCode.deleteMany({ where: { userId: user.id } });
     const code = generateOtp();
     await prisma.loginCode.create({ data: { userId: user.id, code, expiresAt: new Date(Date.now() + 10 * 60 * 1000) } });
