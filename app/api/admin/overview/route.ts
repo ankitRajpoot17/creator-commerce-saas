@@ -1,0 +1,2 @@
+import {NextResponse} from "next/server";import {prisma} from "@/lib/prisma";import {getCurrentUser} from "@/lib/auth";
+export async function GET(){const u=await getCurrentUser();if(!u||u.role!=="ADMIN")return NextResponse.json({error:"Admin access required."},{status:403});const [users,products,orders,paid,events]=await Promise.all([prisma.user.count(),prisma.product.count(),prisma.order.count(),prisma.order.aggregate({where:{status:"PAID"},_sum:{amount:true}}),prisma.event.count()]);return NextResponse.json({users,products,orders,paidRevenue:paid._sum.amount||0,events});}
