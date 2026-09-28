@@ -401,3 +401,16 @@ model EmailUnsubscribe {
   @@unique([creatorId,email])
   @@index([email])
 }
+
+model WebhookEvent {
+  id String @id @default(cuid())
+  provider String
+  eventId String
+  eventType String
+  status String @default("PROCESSING")
+  payloadHash String
+  processedAt DateTime?
+  createdAt DateTime @default(now())
+  @@unique([provider,eventId])
+  @@index([provider,eventType,createdAt])
+}
