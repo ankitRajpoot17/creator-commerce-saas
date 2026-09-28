@@ -41,12 +41,12 @@ export async function PUT(req:Request){
   if(campaign.segment==="LEAD_MAGNET")where.leadMagnetId={not:null};
   if(campaign.segment==="CUSTOMERS")where.creator={orders:{some:{status:"PAID"}}};
   if(campaign.segment==="MEMBERS")where.creator={memberships:{some:{status:"ACTIVE"}}};
-  const leads=await prisma.lead.findMany({where,select:{email:true,name:true}});
+  const leads=await prisma.lead.findMany({where,select:{email:true,name:true}});\n  const unsubscribed=new Set((await prisma.emailUnsubscribe.findMany({where:{creatorId:user.id},select:{email:true}})).map(x=>x.email));\n  const recipients=leads.filter(x=>!unsubscribed.has(x.email));
   let sent=0,failed=0;
-  for(const lead of leads){
-   try{await sendEmail({to:lead.email,subject:campaign.subject,html:"<div>"+renderEmailBody(campaign.body,lead.name).replaceAll("\\n","<br/>")+"</div>"});sent++;}catch{failed++;}
+  for(const lead of recipients){
+   try{const result=await sendEmail({to:lead.email,subject:campaign.subject,html:"<div>"+renderEmailBody(campaign.body,lead.name).replaceAll("\\n","<br/>")+"</div>"}); if(result.sent){sent++; await prisma.emailDelivery.create({data:{campaignId:campaign.id,recipientEmail:lead.email,recipientName:lead.name,subject:campaign.subject,status:"SENT",providerId:(result.data as any)?.id||null}});}catch(error){failed++; await prisma.emailDelivery.create({data:{campaignId:campaign.id,recipientEmail:lead.email,recipientName:lead.name,subject:campaign.subject,status:"FAILED",error:error instanceof Error?error.message:"Unknown error"}});}
   }
   const updated=await prisma.emailCampaign.update({where:{id},data:{status:"SENT",sentAt:new Date()}});
-  return NextResponse.json({campaign:updated,recipients:leads.length,sent,failed});
+  return NextResponse.json({campaign:updated,recipients:recipients.length,sent,failed});
  }catch{return NextResponse.json({error:"Unable to send campaign."},{status:500});}
 }
