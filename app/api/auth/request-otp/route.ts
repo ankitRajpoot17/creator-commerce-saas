@@ -1,4 +1,5 @@
 import { rateLimit, requestKey } from "@/lib/rate-limit";
+function isConfiguredAdmin(email:string){return (process.env.ADMIN_EMAILS||"").split(",").map(v=>v.trim().toLowerCase()).filter(Boolean).includes(email);}
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateOtp } from "@/lib/auth";
@@ -10,7 +11,8 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
 
-    const user = await prisma.user.upsert({ where: { email }, update: {}, create: { email } });
+    const admin=isConfiguredAdmin(email);
+    const user = await prisma.user.upsert({ where: { email }, update: admin ? { role: "ADMIN" } : {}, create: { email, role: admin ? "ADMIN" : "CREATOR" } });
     const recent = await prisma.loginCode.count({ where: { userId: user.id, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } } });
     if (recent >= 5) return NextResponse.json({ error: "Too many OTP requests. Try again later." }, { status: 429 });
     await prisma.loginCode.deleteMany({ where: { userId: user.id } });
