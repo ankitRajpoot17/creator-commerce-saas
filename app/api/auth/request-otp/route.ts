@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Valid email is required." }, { status: 400 });
 
-    const admin=isConfiguredAdmin(email);
+    const rl = await rateLimit(requestKey(request, "otp-request"), 5, 900);\n    if (!rl.allowed) return NextResponse.json({ error: "Too many OTP requests. Try again later." }, { status: 429 });\n    const admin=isConfiguredAdmin(email);
     const user = await prisma.user.upsert({ where: { email }, update: admin ? { role: "ADMIN" } : {}, create: { email, role: admin ? "ADMIN" : "CREATOR" } });
     const recent = await prisma.loginCode.count({ where: { userId: user.id, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } } });
     if (recent >= 5) return NextResponse.json({ error: "Too many OTP requests. Try again later." }, { status: 429 });
