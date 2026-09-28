@@ -28,7 +28,7 @@ model User {
   updatedAt DateTime @updatedAt
 }
 model Session { id String @id @default(cuid()); token String @unique; userId String; expiresAt DateTime; user User @relation(fields:[userId],references:[id],onDelete:Cascade); createdAt DateTime @default(now()); @@index([userId]); @@index([expiresAt]) }
-model LoginCode { id String @id @default(cuid()); userId String; code String; expiresAt DateTime; user User @relation(fields:[userId],references:[id],onDelete:Cascade); createdAt DateTime @default(now()); @@index([userId,code]); @@index([expiresAt]) }
+model LoginCode { id String @id @default(cuid()); userId String; code String; attempts Int @default(0); expiresAt DateTime; user User @relation(fields:[userId],references:[id],onDelete:Cascade); createdAt DateTime @default(now()); @@index([userId,code]); @@index([expiresAt]) }
 model CreatorProfile { id String @id @default(cuid()); userId String @unique; username String @unique; displayName String; bio String?; avatarUrl String?; theme String @default("minimal"); published Boolean @default(false); user User @relation(fields:[userId],references:[id],onDelete:Cascade); links ProfileLink[]; products Product[]; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
 model ProfileLink { id String @id @default(cuid()); profileId String; title String; url String; position Int @default(0); enabled Boolean @default(true); profile CreatorProfile @relation(fields:[profileId],references:[id],onDelete:Cascade); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
 model Product {
