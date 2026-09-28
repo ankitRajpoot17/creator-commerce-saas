@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { enrollPaidCourse } from "@/lib/enrollment";
 import { activateMembership } from "@/lib/membership";
+import { sendEmail, renderEmailBody } from "@/lib/email";
 
 export async function POST(request: Request) {
   const raw = await request.text();
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
         if (order.status !== "PAID" && order.status !== "REFUNDED") {
           await prisma.order.update({ where: { id: order.id }, data: { status: "PAID", provider: "razorpay", providerPaymentId: payment.id } });
           await prisma.analyticsEvent.create({ data: { creatorId: order.creatorId, type: "SALE", path: "/checkout/" + order.productId, metadata: JSON.stringify({ orderId: order.id, productId: order.productId, amount: order.amount, currency: order.currency }) } });
+          if (process.env.RESEND_API_KEY && order.downloadToken) { const baseUrl=process.env.NEXTAUTH_URL||"http://localhost:3000"; const downloadUrl=baseUrl.replace(/\/$/,"")+"/api/download/"+order.id+"?token="+encodeURIComponent(order.downloadToken); await sendEmail({to:order.buyerEmail,subject:"Your purchase is ready",html:"<p>Your payment was successful.</p><p><a href=\""+renderEmailBody(downloadUrl)+"\">Download your purchase</a></p>"}); }
         }
         await enrollPaidCourse(order.id);
         await activateMembership(order.id);
