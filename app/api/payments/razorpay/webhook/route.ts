@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     if (razorpayOrderId) {
       const order = await prisma.order.findFirst({ where: { providerId: razorpayOrderId } });
       if (order && eventType === "payment.captured") {
-        if (Number(payment.amount) !== order.amount || String(payment.currency) !== order.currency) return NextResponse.json({ error: "Payment amount or currency mismatch." }, { status: 400 });
+        if (Number(payment.amount) !== order.amount || String(payment.currency) !== order.currency) { await prisma.webhookEvent.updateMany({where:{provider:"razorpay",eventId:webhookId},data:{status:"FAILED"}}); return NextResponse.json({ error: "Payment amount or currency mismatch." }, { status: 400 }); }
         if (order.status !== "PAID") {
           await prisma.order.update({ where: { id: order.id }, data: { status: "PAID", provider: "razorpay", providerPaymentId: payment.id } });
           await prisma.analyticsEvent.create({ data: { creatorId: order.creatorId, type: "SALE", path: "/checkout/" + order.productId, metadata: JSON.stringify({ orderId: order.id, productId: order.productId, amount: order.amount, currency: order.currency }) } });
