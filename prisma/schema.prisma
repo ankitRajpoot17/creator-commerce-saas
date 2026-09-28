@@ -66,7 +66,8 @@ expiresAt DateTime
 user User @relation(fields:[userId],references:[id],onDelete:Cascade)
 createdAt DateTime @default(now())
 @@index([userId])
-@@index([expiresAt]) }
+@@index([expiresAt])
+}
 model LoginCode { id String @id @default(cuid())
 userId String
 code String
@@ -75,7 +76,8 @@ expiresAt DateTime
 user User @relation(fields:[userId],references:[id],onDelete:Cascade)
 createdAt DateTime @default(now())
 @@index([userId,code])
-@@index([expiresAt]) }
+@@index([expiresAt])
+}
 model CreatorProfile { id String @id @default(cuid())
 userId String @unique
 username String @unique
@@ -88,7 +90,8 @@ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
 links ProfileLink[]
 products Product[]
 createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt }
+updatedAt DateTime @updatedAt
+}
 model ProfileLink { id String @id @default(cuid())
 profileId String
 title String
@@ -97,7 +100,8 @@ position Int @default(0)
 enabled Boolean @default(true)
 profile CreatorProfile @relation(fields:[profileId],references:[id],onDelete:Cascade)
 createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt }
+updatedAt DateTime @updatedAt
+}
 model Product {
   id String @id @default(cuid())
 creatorId String
@@ -149,7 +153,8 @@ product Product @relation(fields:[productId],references:[id],onDelete:Cascade)
 modules CourseModule[]
 enrollments Enrollment[]
 createdAt DateTime @default(now())
-updatedAt DateTime @updatedAt }
+updatedAt DateTime @updatedAt
+}
 model CourseModule { id String @id @default(cuid())
 courseId String
 title String
@@ -158,7 +163,8 @@ course Course @relation(fields:[courseId],references:[id],onDelete:Cascade)
 lessons Lesson[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
-@@index([courseId,position]) }
+@@index([courseId,position])
+}
 model Lesson { id String @id @default(cuid())
 moduleId String
 title String
@@ -170,7 +176,8 @@ module CourseModule @relation(fields:[moduleId],references:[id],onDelete:Cascade
 progress LessonProgress[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
-@@index([moduleId,position]) }
+@@index([moduleId,position])
+}
 model Enrollment { id String @id @default(cuid())
 courseId String
 productId String
@@ -180,7 +187,8 @@ product Product @relation(fields:[productId],references:[id],onDelete:Cascade)
 user User @relation(fields:[userId],references:[id],onDelete:Cascade)
 createdAt DateTime @default(now())
 @@unique([courseId,userId])
-@@index([userId]) }
+@@index([userId])
+}
 model Lead {
   id String @id @default(cuid())
   creatorId String
@@ -273,7 +281,8 @@ user User @relation(fields:[userId],references:[id],onDelete:Cascade)
 updatedAt DateTime @updatedAt
 createdAt DateTime @default(now())
 @@unique([lessonId,userId])
-@@index([userId]) }
+@@index([userId])
+}
 
 model Event {
   id String @id @default(cuid())
