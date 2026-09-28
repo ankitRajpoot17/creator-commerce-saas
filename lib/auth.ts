@@ -11,7 +11,7 @@ export async function createSession(userId: string) {
   const token = crypto.randomBytes(32).toString("hex");
   await prisma.session.create({ data: { token, userId, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * SESSION_DAYS) } });
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 60 * 24 * SESSION_DAYS });
+  jar.set(SESSION_COOKIE, token, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * SESSION_DAYS });
   return token;
 }
 
