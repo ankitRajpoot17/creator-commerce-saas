@@ -27,7 +27,10 @@ model User {
   bookings Booking[]
   ownedMemberships Membership[] @relation("MembershipCreator")
   analyticsEvents AnalyticsEvent[]
+  communityConnections CommunityConnection[]
   joinedMemberships Membership[] @relation("MembershipMember")
+  events Event[]
+  subscriptions Subscription[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -129,6 +132,70 @@ model Membership {
   @@index([memberUserId,status])
 }
 model LessonProgress { id String @id @default(cuid()); lessonId String; userId String; completed Boolean @default(false); progress Int @default(0); lesson Lesson @relation(fields:[lessonId],references:[id],onDelete:Cascade); user User @relation(fields:[userId],references:[id],onDelete:Cascade); updatedAt DateTime @updatedAt; createdAt DateTime @default(now()); @@unique([lessonId,userId]); @@index([userId]) }
+
+model Event {
+  id String @id @default(cuid())
+  creatorId String
+  name String
+  slug String @unique
+  description String?
+  startsAt DateTime
+  endsAt DateTime?
+  meetingUrl String?
+  price Int @default(0)
+  currency String @default("INR")
+  capacity Int?
+  published Boolean @default(false)
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  registrations EventRegistration[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([creatorId,startsAt])
+}
+model EventRegistration {
+  id String @id @default(cuid())
+  eventId String
+  email String
+  name String?
+  status String @default("REGISTERED")
+  createdAt DateTime @default(now())
+  event Event @relation(fields:[eventId],references:[id],onDelete:Cascade)
+  @@unique([eventId,email])
+  @@index([email])
+}
+model SaaSPlan {
+  id String @id @default(cuid())
+  name String @unique
+  monthlyPrice Int @default(0)
+  yearlyPrice Int @default(0)
+  active Boolean @default(true)
+  subscriptions Subscription[]
+}
+model Subscription {
+  id String @id @default(cuid())
+  userId String
+  planId String
+  provider String
+  providerSubscriptionId String?
+  status String @default("ACTIVE")
+  currentPeriodEnd DateTime?
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  plan SaaSPlan @relation(fields:[planId],references:[id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([userId,status])
+  @@index([providerSubscriptionId])
+}
+model CommunityConnection {
+  id String @id @default(cuid())
+  creatorId String
+  provider String
+  externalId String?
+  accessToken String?
+  enabled Boolean @default(true)
+  creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
+  @@unique([creatorId,provider])
+}
 
 model AnalyticsEvent {
   id String @id @default(cuid())
