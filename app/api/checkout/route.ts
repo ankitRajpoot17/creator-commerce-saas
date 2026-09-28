@@ -10,6 +10,7 @@ export async function POST(request: Request) {
     const order = await prisma.order.create({
       data: { productId: product.id, creatorId: product.creatorId, buyerEmail: String(buyerEmail).trim().toLowerCase(), amount: product.price, currency: product.currency },
     });
+    await prisma.analyticsEvent.create({ data: { creatorId: product.creatorId, type: "CHECKOUT_STARTED", path: "/checkout/" + product.id, metadata: JSON.stringify({ orderId: order.id, productId: product.id }) } });
     return NextResponse.json({ order, checkout: { provider: "razorpay", mode: "pending", message: "Connect Razorpay keys to create the live payment order." } }, { status: 201 });
   } catch {
     return NextResponse.json({ error: "Unable to create checkout." }, { status: 500 });
