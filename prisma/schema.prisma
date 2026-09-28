@@ -32,6 +32,7 @@ model User {
   joinedMemberships Membership[] @relation("MembershipMember")
   events Event[]
   subscriptions Subscription[]
+  emailUnsubscribes EmailUnsubscribe[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
