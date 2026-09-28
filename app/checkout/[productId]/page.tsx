@@ -12,12 +12,25 @@ export default function Checkout({ params }: { params: Promise<{ productId: stri
     setMessage("Creating order...");
     const r = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productId, buyerEmail: email }) });
     const data = await r.json();
-    setMessage(r.ok ? "Order created. Payment gateway connection is the next step." : data.error || "Checkout failed.");
+    if (!r.ok) { setMessage(data.error || "Checkout failed."); return; }
+
+    const payment = await fetch("/api/payments/razorpay/order", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderId: data.order.id }),
+    });
+    const paymentData = await payment.json();
+    if (!payment.ok) { setMessage(paymentData.error || "Payment setup failed."); return; }
+
+    if (!paymentData.keyId) {
+      setMessage("Razorpay keys are not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to enable live payments.");
+      return;
+    }
+
+    setMessage("Razorpay order created. Payment UI can now be mounted with the returned order ID.");
   }
 
   return <main style={{ minHeight: "100vh", padding: "70px 24px", background: "#f7f7f7" }}>
     <form onSubmit={submit} style={{ maxWidth: 520, margin: "auto", background: "#fff", padding: 32, borderRadius: 20 }}>
-      <a href="javascript:history.back()">← Back</a><h1>Checkout</h1><p>Enter your email to create your order.</p>
+      <a href="/">← Home</a><h1>Checkout</h1><p>Enter your email to continue.</p>
       <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" style={{ width: "100%", padding: 14, border: "1px solid #ddd", borderRadius: 10 }} />
       <button style={{ width: "100%", marginTop: 14, padding: 14, border: 0, borderRadius: 10, background: "#111", color: "#fff", fontWeight: 700 }}>Continue to payment</button>
       {message && <p style={{ color: "#666" }}>{message}</p>}
