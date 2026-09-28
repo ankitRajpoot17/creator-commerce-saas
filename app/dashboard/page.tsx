@@ -1,5 +1,6 @@
 const modules = [
-  ["Profile & Links", "/dashboard/links", "Build your public creator page and manage links."],
+  ["Profile & Links", "/dashboard/links", "Manage links shown on your public creator page."],
+  ["Customize", "/dashboard/customize", "Edit bio, avatar and profile theme."],
   ["Products", "#", "Digital products and checkout are next."],
   ["Courses", "#", "Course builder is planned for the commerce phase."],
   ["Memberships", "#", "Paid community foundations are planned."],
