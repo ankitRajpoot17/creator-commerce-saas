@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { isValidUrl } from "@/lib/validation";
 
 export async function GET(request: Request) {
   const username = new URL(request.url).searchParams.get("username")?.trim().toLowerCase();
@@ -23,12 +24,12 @@ export async function POST(request: Request) {
     if (!name) return NextResponse.json({ error: "Product name is required." }, { status: 400 });
     const profile = await prisma.creatorProfile.findUnique({ where: { userId: user.id } });
     if (!profile) return NextResponse.json({ error: "Creator profile not found." }, { status: 404 });
-    const price = Number(body.price ?? 0);
+    const price = Number(body.price ?? 0); const fileUrl=String(body.fileUrl ?? "").trim(); const coverUrl=String(body.coverUrl ?? "").trim(); if(fileUrl&&!isValidUrl(fileUrl))return NextResponse.json({error:"Invalid file URL."},{status:400}); if(coverUrl&&!isValidUrl(coverUrl))return NextResponse.json({error:"Invalid cover URL."},{status:400});
     if (!Number.isInteger(price) || price < 0) return NextResponse.json({ error: "Price must be a non-negative integer in paise." }, { status: 400 });
     const base = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "product";
     let slug = base, counter = 1;
     while (await prisma.product.findUnique({ where: { slug } })) slug = base + "-" + counter++;
-    const product = await prisma.product.create({ data: { creatorId: user.id, profileId: profile.id, name, slug, price, description: String(body.description ?? "").trim() || null, fileUrl: String(body.fileUrl ?? "").trim() || null, fileKey: String(body.fileKey ?? "").trim() || null, coverUrl: String(body.coverUrl ?? "").trim() || null, type: body.type === "COURSE" ? "COURSE" : body.type === "MEMBERSHIP" ? "MEMBERSHIP" : "DIGITAL" } });
+    const product = await prisma.product.create({ data: { creatorId: user.id, profileId: profile.id, name, slug, price, description: String(body.description ?? "").trim() || null, fileUrl: fileUrl || null, fileKey: String(body.fileKey ?? "").trim() || null, coverUrl: coverUrl || null, type: body.type === "COURSE" ? "COURSE" : body.type === "MEMBERSHIP" ? "MEMBERSHIP" : "DIGITAL" } });
     return NextResponse.json({ product }, { status: 201 });
   } catch { return NextResponse.json({ error: "Unable to create product." }, { status: 500 }); }
 }
