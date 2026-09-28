@@ -35,7 +35,7 @@ model LoginCode { id String @id @default(cuid()); userId String; code String; at
 model CreatorProfile { id String @id @default(cuid()); userId String @unique; username String @unique; displayName String; bio String?; avatarUrl String?; theme String @default("minimal"); published Boolean @default(false); user User @relation(fields:[userId],references:[id],onDelete:Cascade); links ProfileLink[]; products Product[]; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
 model ProfileLink { id String @id @default(cuid()); profileId String; title String; url String; position Int @default(0); enabled Boolean @default(true); profile CreatorProfile @relation(fields:[profileId],references:[id],onDelete:Cascade); createdAt DateTime @default(now()); updatedAt DateTime @updatedAt }
 model Product {
-  id String @id @default(cuid()); creatorId String; profileId String; type ProductType @default(DIGITAL); status ProductStatus @default(DRAFT); name String; slug String @unique; description String?; price Int @default(0); currency String @default("INR"); fileUrl String?; coverUrl String?
+  id String @id @default(cuid()); creatorId String; profileId String; type ProductType @default(DIGITAL); status ProductStatus @default(DRAFT); name String; slug String @unique; description String?; price Int @default(0); currency String @default("INR"); fileUrl String?; fileKey String?; coverUrl String?
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade); profile CreatorProfile @relation(fields:[profileId],references:[id],onDelete:Cascade); orders Order[]; course Course?; enrollments Enrollment[]; createdAt DateTime @default(now()); updatedAt DateTime @updatedAt; @@index([profileId,status])
 }
 model Order {
