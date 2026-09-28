@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
     const product = await prisma.product.findUnique({ where: { id: productId } });
     if (!product || product.status !== "PUBLISHED") return NextResponse.json({ error: "Product not available." }, { status: 404 });
     const order = await prisma.order.create({
-      data: { productId: product.id, creatorId: product.creatorId, buyerEmail: String(buyerEmail).trim().toLowerCase(), amount: product.price, currency: product.currency },
+      data: { productId: product.id, creatorId: product.creatorId, buyerEmail: String(buyerEmail).trim().toLowerCase(), amount: product.price, currency: product.currency, downloadToken: crypto.randomBytes(32).toString("hex") },
     });
     await prisma.analyticsEvent.create({ data: { creatorId: product.creatorId, type: "CHECKOUT_STARTED", path: "/checkout/" + product.id, metadata: JSON.stringify({ orderId: order.id, productId: product.id }) } });
     return NextResponse.json({ order, checkout: { provider: "razorpay", mode: "pending", message: "Connect Razorpay keys to create the live payment order." } }, { status: 201 });
