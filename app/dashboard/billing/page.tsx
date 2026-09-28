@@ -20,6 +20,6 @@ export default function Billing(){
   <div style={{display:"flex",gap:8,margin:"20px 0"}}><button onClick={()=>setInterval("MONTHLY")} disabled={busy}>Monthly</button><button onClick={()=>setInterval("YEARLY")} disabled={busy}>Yearly</button></div>
   {current&&<p>Current plan: <strong>{current.plan.name}</strong> · {current.status}</p>}
   {msg&&<p>{msg}</p>}
-  <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>{(d.plans||[]).map((p:any)=><div key={p.id} style={{border:"1px solid #ddd",padding:20,minWidth:220}}><h2>{p.name}</h2><p>₹{interval==="MONTHLY"?p.monthlyPrice:p.yearlyPrice}{interval==="MONTHLY"?"/month":"/year"}</p><button disabled={busy||!p.razorpayPlanId} onClick={()=>choose(p)}>{p.razorpayPlanId?"Choose plan":"Payment setup required"}</button></div>)}</div>
+  <div style={{display:"flex",gap:16,flexWrap:"wrap"}}>{(d.plans||[]).map((p:any)=><div key={p.id} style={{border:"1px solid #ddd",padding:20,minWidth:220}}><h2>{p.name}</h2><p>₹{interval==="MONTHLY"?p.monthlyPrice:p.yearlyPrice}{interval==="MONTHLY"?"/month":"/year"}</p><button disabled={busy||!(interval==="MONTHLY"?p.razorpayMonthlyPlanId:p.razorpayYearlyPlanId)} onClick={()=>choose(p)}>{(interval==="MONTHLY"?p.razorpayMonthlyPlanId:p.razorpayYearlyPlanId)?"Choose plan":"Payment setup required"}</button></div>)}</div>
  </main>
 }
