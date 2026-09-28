@@ -17,5 +17,9 @@ export async function GET(request: Request) {
   if (!id) return NextResponse.json({ error: "Course id is required." }, { status: 400 });
   const course = await prisma.course.findUnique({ where: { id }, include: { product: true, modules: { orderBy: { position: "asc" }, include: { lessons: { orderBy: { position: "asc" } } } } } });
   if (!course) return NextResponse.json({ error: "Course not found." }, { status: 404 });
-  return NextResponse.json({ course });
+  const user = await getCurrentUser();
+  const isOwner = user?.id === course.product.creatorId;
+  const enrollment = user ? await prisma.enrollment.findUnique({ where: { courseId_userId: { courseId: course.id, userId: user.id } } }) : null;
+  const canViewContent = Boolean(isOwner || enrollment);
+  return NextResponse.json({ course: { ...course, modules: course.modules.map(m => ({ ...m, lessons: m.lessons.map(l => canViewContent ? l : { id:l.id,title:l.title,type:l.type,position:l.position,moduleId:l.moduleId }) })) }, access: { isOwner, enrolled:Boolean(enrollment), canViewContent } });
 }
