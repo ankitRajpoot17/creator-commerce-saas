@@ -1,0 +1,2 @@
+ALTER TABLE "SaaSPlan" ADD COLUMN "razorpayPlanId" TEXT;
+ALTER TABLE "Subscription" ADD COLUMN "billingInterval" TEXT NOT NULL DEFAULT 'MONTHLY';
