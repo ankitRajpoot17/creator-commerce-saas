@@ -18,7 +18,10 @@ export async function POST(request: Request) {
     if (razorpayOrderId) {
       const order = await prisma.order.findFirst({ where: { providerId: razorpayOrderId } });
       if (order && event.event === "payment.captured") {
-        await prisma.order.update({ where: { id: order.id }, data: { status: "PAID", provider: "razorpay", providerPaymentId: payment.id } });
+        if (order.status !== "PAID") {
+          await prisma.order.update({ where: { id: order.id }, data: { status: "PAID", provider: "razorpay", providerPaymentId: payment.id } });
+          await prisma.analyticsEvent.create({ data: { creatorId: order.creatorId, type: "SALE", path: "/checkout/" + order.productId, metadata: JSON.stringify({ orderId: order.id, productId: order.productId, amount: order.amount, currency: order.currency }) } });
+        }
         await enrollPaidCourse(order.id);
         await activateMembership(order.id);
       }
