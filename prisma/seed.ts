@@ -1,0 +1,1 @@
+import {PrismaClient} from "@prisma/client";const prisma=new PrismaClient();async function main(){for(const p of [{name:"Free",monthlyPrice:0,yearlyPrice:0},{name:"Pro",monthlyPrice:999,yearlyPrice:9990},{name:"Business",monthlyPrice:2499,yearlyPrice:24990}])await prisma.saaSPlan.upsert({where:{name:p.name},update:p,create:p});}main().finally(()=>prisma.$disconnect());
