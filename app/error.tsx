@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({reset}:{error:Error&{digest?:string};reset:()=>void}){return <main style={{padding:64,textAlign:"center",fontFamily:"Arial"}}><h1>Something went wrong</h1><p>We couldn't complete this request.</p><button onClick={()=>reset()}>Try again</button></main>}
