@@ -1,6 +1,7 @@
 import {NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {getCurrentUser} from "@/lib/auth";
+import {sendEmail} from "@/lib/email";
 
 export async function POST(req:Request){
  const b=await req.json(); const slotId=String(b.slotId||""),email=String(b.email||"").trim().toLowerCase();
@@ -8,7 +9,14 @@ export async function POST(req:Request){
  const slot=await prisma.bookingSlot.findUnique({where:{id:slotId}});
  if(!slot||!slot.available||slot.startAt<=new Date())return NextResponse.json({error:"This slot is no longer available."},{status:409});
  const booking=await prisma.$transaction(async tx=>{const locked=await tx.bookingSlot.updateMany({where:{id:slotId,available:true},data:{available:false}});if(!locked.count)throw new Error("SLOT_TAKEN");return tx.booking.create({data:{creatorId:slot.creatorId,slotId,customerEmail:email,customerName:String(b.name||"").trim()||null,note:String(b.note||"").trim()||null,amount:slot.price,currency:slot.currency}})}).catch(e=>{if(e instanceof Error&&e.message==="SLOT_TAKEN")return null;throw e});
- if(!booking)return NextResponse.json({error:"This slot was just booked."},{status:409}); return NextResponse.json({booking},{status:201});
+ if(!booking)return NextResponse.json({error:"This slot was just booked."},{status:409});
+ const creator=await prisma.user.findUnique({where:{id:slot.creatorId},include:{profile:true}});
+ if(creator?.email && process.env.RESEND_API_KEY){
+  const when=slot.startAt.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
+  await sendEmail({to:email,subject:"Booking request received",html:"<div><p>Hi "+(String(b.name||"there"))+",</p><p>Your session request for "+when+" has been received.</p><p>Booking status: "+(booking.amount>0?"Awaiting payment":"Confirmed")+".</p></div>"});
+  if(booking.amount===0) await sendEmail({to:creator.email,subject:"New booking received",html:"<div><p>You have a new booking from "+email+".</p><p>Time: "+when+"</p></div>"});
+ }
+ return NextResponse.json({booking},{status:201});
 }
 
 export async function GET(){
