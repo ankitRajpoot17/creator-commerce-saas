@@ -4,6 +4,7 @@ import {prisma} from "@/lib/prisma";
 import {getCurrentUser} from "@/lib/auth";
 import {sendEmail,renderEmailBody} from "@/lib/email";
 import crypto from "crypto";
+import { emitAutomationEvent } from "@/lib/automation";
 
 export async function POST(req:Request){
  const rl=await rateLimit(requestKey(req,"booking"),10,60); if(!rl.allowed)return NextResponse.json({error:"Too many booking attempts."},{status:429});
@@ -13,6 +14,7 @@ export async function POST(req:Request){
  if(!slot||!slot.available||slot.startAt<=new Date())return NextResponse.json({error:"This slot is no longer available."},{status:409});
  const booking=await prisma.$transaction(async tx=>{const locked=await tx.bookingSlot.updateMany({where:{id:slotId,available:true},data:{available:false}});if(!locked.count)throw new Error("SLOT_TAKEN");return tx.booking.create({data:{creatorId:slot.creatorId,slotId,customerEmail:email,customerName:String(b.name||"").trim()||null,note:String(b.note||"").trim()||null,amount:slot.price,currency:slot.currency,manageToken:crypto.randomBytes(32).toString("hex")}})}).catch(e=>{if(e instanceof Error&&e.message==="SLOT_TAKEN")return null;throw e});
  if(!booking)return NextResponse.json({error:"This slot was just booked."},{status:409});
+ await emitAutomationEvent({creatorId:slot.creatorId,payload:{event:{type:"BOOKING_CREATED"},booking:{id:booking.id,email:booking.customerEmail,name:booking.customerName,amount:booking.amount,currency:booking.currency,status:booking.status},email:booking.customerEmail,name:booking.customerName||""}}).catch(()=>undefined);
  const creator=await prisma.user.findUnique({where:{id:slot.creatorId},include:{profile:true}});
  if(creator?.email && process.env.RESEND_API_KEY){
   const when=slot.startAt.toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"});
