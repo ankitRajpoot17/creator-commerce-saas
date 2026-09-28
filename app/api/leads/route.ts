@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { enqueueEmailJob } from "@/lib/queue";
+import { createPrivateDownloadUrl } from "@/lib/storage";
 
 export async function GET(){
  const user=await getCurrentUser(); if(!user) return NextResponse.json({error:"Authentication required."},{status:401});
@@ -28,6 +29,8 @@ export async function POST(request:Request){
       await enqueueEmailJob({to:email,name:String(body.name??"").trim(),subject:automation.subject,body:automation.body,creatorId,automationId:automation.id,stepId:"legacy",leadId:lead.id});
     }
   }
-  return NextResponse.json({lead}, {status:201});
+  let resourceUrl:null|string=null;
+  if(magnetId){const magnet=await prisma.leadMagnet.findUnique({where:{id:magnetId},select:{fileKey:true}});if(magnet?.fileKey){resourceUrl=await createPrivateDownloadUrl(magnet.fileKey);}}
+  return NextResponse.json({lead,resourceUrl}, {status:201});
  }catch{return NextResponse.json({error:"Unable to capture lead."},{status:500});}
 }
