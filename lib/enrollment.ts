@@ -7,3 +7,10 @@ export async function enrollPaidCourse(orderId: string) {
   const user = await prisma.user.upsert({ where:{email}, update:{}, create:{email,role:"CUSTOMER"} });
   return prisma.enrollment.upsert({ where:{courseId_userId:{courseId:order.product.course.id,userId:user.id}}, update:{}, create:{courseId:order.product.course.id,productId:order.product.id,userId:user.id} });
 }
+
+export async function revokePaidCourse(orderId: string) {
+  const order=await prisma.order.findUnique({where:{id:orderId},include:{product:true}});
+  if(!order||order.product.type!=="COURSE")return;
+  const user=await prisma.user.findUnique({where:{email:order.buyerEmail.toLowerCase().trim()}});
+  if(user)await prisma.enrollment.deleteMany({where:{productId:order.productId,userId:user.id}});
+}
