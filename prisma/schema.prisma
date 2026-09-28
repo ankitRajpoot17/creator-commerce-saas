@@ -212,6 +212,7 @@ model Booking {
   provider String?
   providerOrderId String?
   providerPaymentId String?
+  manageToken String? @unique
   reminder24SentAt DateTime?
   reminder1SentAt DateTime?
   creator User @relation(fields:[creatorId],references:[id],onDelete:Cascade)
