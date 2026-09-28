@@ -15,10 +15,7 @@ export async function POST(req:Request){
   const provider=String(b.provider||"razorpay").toLowerCase();
   const interval=String(b.interval||"MONTHLY").toUpperCase();
   if(!["MONTHLY","YEARLY"].includes(interval))return NextResponse.json({error:"Invalid billing interval."},{status:400});
-  if(provider==="manual"){
-   const sub=await prisma.subscription.upsert({where:{userId_planId:{userId:u.id,planId:plan.id}},update:{status:"ACTIVE",provider:"manual",billingInterval:interval},create:{userId:u.id,planId:plan.id,provider:"manual",billingInterval:interval}});
-   return NextResponse.json({subscription:sub},{status:201});
-  }
+  if(provider==="manual") return NextResponse.json({error:"Manual activation is disabled for paid SaaS plans."},{status:400});
   if(provider!=="razorpay")return NextResponse.json({error:"Unsupported billing provider."},{status:400});
   const razorpayPlanId=interval==="YEARLY"?plan.razorpayYearlyPlanId:plan.razorpayMonthlyPlanId;
   if(!razorpayPlanId)return NextResponse.json({error:"This billing interval is not configured for Razorpay recurring billing."},{status:503});
